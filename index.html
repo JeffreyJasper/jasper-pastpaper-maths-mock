@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Jasper 數學模擬試卷 V8.3 (深度拆解版)</title>
+    <title>Jasper 數學模擬試卷 V8.4 (家長測試+符號選擇版)</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -23,6 +23,10 @@
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         
+        /* 符號選擇器樣式 */
+        .op-select { appearance: none; text-align: center; cursor: pointer; outline: none; transition: all 0.2s; }
+        .op-select:hover { transform: scale(1.05); }
+
         @keyframes popUp { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
         .praise-anim { animation: popUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
     </style>
@@ -37,29 +41,39 @@
             Clock: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
             Check: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>,
             Brain: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg>,
-            Alert: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>,
-            Idea: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.9 1.2 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+            Idea: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.9 1.2 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>,
+            FastForward: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 19 22 12 13 5 13 19"/><polygon points="2 19 11 12 2 5 2 19"/></svg>
         };
 
         const PRAISE_WORDS = ["太棒了！", "Jasper 好野！", "完全正確！", "做得好！", "數學天才！", "繼續加油！"];
 
-        // --- 視覺組件 ---
+        // --- 視覺組件：量杯 (純 SVG 修復版) ---
         const BeakerView = ({ capacity = 1000, level, label }) => {
-            const heightPerc = (level / capacity) * 100;
+            const perc = level / capacity;
             return (
                 <div className="flex flex-col items-center mx-4 my-6">
-                    <div className="relative w-32 h-48 border-b-4 border-x-4 border-slate-700 rounded-b-xl bg-white overflow-hidden shadow-md">
-                        <div className="absolute bottom-0 w-full bg-blue-400 opacity-80 transition-all duration-1000 border-t-2 border-blue-500" style={{height: `${heightPerc}%`}}></div>
-                        <div className="absolute right-0 top-0 h-full w-full flex flex-col justify-end pb-0 pointer-events-none">
-                            {[0.25, 0.5, 0.75, 1].map((p, i) => (
-                                <div key={i} className="absolute right-0 w-full flex items-center justify-end pr-1" style={{bottom: `${p*100}%`}}>
-                                    <span className="text-xs font-bold text-slate-500 mr-1">{Math.round(capacity * p)}</span>
-                                    <div className="w-6 h-0.5 bg-slate-800"></div>
-                                </div>
-                            ))}
-                        </div>
-                        <div className="absolute top-2 left-2 font-bold text-xs text-slate-400">mL</div>
-                    </div>
+                    <svg width="140" height="180" viewBox="0 0 140 180" className="drop-shadow-md">
+                        {/* 杯身 */}
+                        <path d="M30 20 L30 160 A10 10 0 0 0 40 170 L110 170 A10 10 0 0 0 120 160 L120 20" fill="white" stroke="#334155" strokeWidth="6"/>
+                        {/* 水 */}
+                        <rect x="33" y={167 - (147 * perc)} width="84" height={147 * perc} fill="#60a5fa" opacity="0.8" rx="2" />
+                        <line x1="33" y1={167 - (147 * perc)} x2="117" y2={167 - (147 * perc)} stroke="#2563eb" strokeWidth="3" />
+                        
+                        {/* 刻度 */}
+                        <line x1="100" y1="130.25" x2="120" y2="130.25" stroke="#1e293b" strokeWidth="3"/>
+                        <text x="95" y="134" fontSize="14" fontWeight="bold" textAnchor="end" fill="#475569">{capacity * 0.25}</text>
+                        
+                        <line x1="100" y1="93.5" x2="120" y2="93.5" stroke="#1e293b" strokeWidth="3"/>
+                        <text x="95" y="97" fontSize="14" fontWeight="bold" textAnchor="end" fill="#475569">{capacity * 0.5}</text>
+                        
+                        <line x1="100" y1="56.75" x2="120" y2="56.75" stroke="#1e293b" strokeWidth="3"/>
+                        <text x="95" y="60" fontSize="14" fontWeight="bold" textAnchor="end" fill="#475569">{capacity * 0.75}</text>
+                        
+                        <line x1="100" y1="20" x2="120" y2="20" stroke="#1e293b" strokeWidth="3"/>
+                        
+                        {/* 單位 */}
+                        <text x="40" y="35" fontSize="12" fontWeight="bold" fill="#64748b">mL</text>
+                    </svg>
                     <div className="mt-2 font-bold text-slate-700">{label}</div>
                 </div>
             );
@@ -109,27 +123,42 @@
             );
         };
 
-        // --- 直式組件 ---
+        // --- 直式組件 (新增符號選擇功能) ---
         const VerticalAddSub = ({ n1, n2, op, onComplete }) => {
             const digits1 = n1.toString().padStart(4, ' ').split('');
             const digits2 = n2.toString().padStart(4, ' ').split('');
             const [inputs, setInputs] = useState(['', '', '', '']);
             const [carries, setCarries] = useState(['', '', '', '']);
+            const [userOp, setUserOp] = useState('?'); // 新增：玩家選擇的符號
             const [errorMsg, setErrorMsg] = useState('');
+            
             const correctAns = op === '+' ? n1 + n2 : n1 - n2;
             const correctDigits = correctAns.toString().padStart(4, ' ').split('');
 
             const checkAnswer = () => {
+                if (userOp !== op) {
+                    setErrorMsg(`請選擇正確的計算符號！(應該是 ${op} 喔)`);
+                    return;
+                }
                 let userNumStr = inputs.map(d => d === '' ? ' ' : d).join('');
-                if (parseInt(userNumStr.replace(/\s/g, '')) === correctAns) onComplete(correctAns);
-                else setErrorMsg('小心！檢查你的答案和算草。');
+                if (parseInt(userNumStr.replace(/\s/g, '')) === correctAns) {
+                    onComplete(correctAns);
+                } else {
+                    setErrorMsg('小心！檢查你的答案和算草。');
+                }
             };
 
             return (
                 <div className="bg-white p-6 rounded-2xl border-2 border-slate-200 shadow-sm max-w-sm mx-auto animate-in zoom-in-95">
                     <div className="grid grid-cols-5 gap-1 font-mono">
                         <div className="col-span-1"></div>{digits1.map((d, i) => <div key={`d1-${i}`} className="h-10 flex items-center justify-center text-3xl font-black text-slate-700">{d}</div>)}
-                        <div className="col-span-1 text-3xl font-black text-slate-400">{op}</div>{digits2.map((d, i) => <div key={`d2-${i}`} className="h-10 flex items-center justify-center text-3xl font-black text-slate-700">{d}</div>)}
+                        
+                        {/* 符號選擇器 */}
+                        <select value={userOp} onChange={e=>{setUserOp(e.target.value); setErrorMsg('');}} className="op-select col-span-1 text-3xl font-black text-blue-600 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                            <option value="?">?</option><option value="+">+</option><option value="-">-</option><option value="×">×</option>
+                        </select>
+
+                        {digits2.map((d, i) => <div key={`d2-${i}`} className="h-10 flex items-center justify-center text-3xl font-black text-slate-700">{d}</div>)}
                         <div className="col-span-1"></div>{carries.map((v, i) => (<div key={`c-${i}`} className="flex items-end justify-center"><input className="carry-input" value={v} placeholder="." onChange={e=>setCarries(p=>{const n=[...p];n[i]=e.target.value.slice(-2);return n;})} /></div>))}
                         <div className="col-span-5 calc-line"></div>
                         <div className="col-span-1"></div>{inputs.map((v, i) => (<input key={`in-${i}`} type="number" className={`digit-input h-14 ${v!=='' && correctDigits[i]!==' ' && v!==correctDigits[i] ? 'bg-red-50 border-red-300 text-red-600' : ''}`} value={v} disabled={correctDigits[i]===' '} onChange={e => {setInputs(p=>{const n=[...p];n[i]=e.target.value.slice(-1);return n;}); setErrorMsg('');}} />))}
@@ -151,9 +180,14 @@
 
             const [inputs1, setInputs1] = useState(['', '', '', '']); const [carries1, setCarries1] = useState(['', '', '', '']);
             const [inputs2, setInputs2] = useState(['', '', '', '']); const [carries2, setCarries2] = useState(['', '', '', '']);
+            const [userOp1, setUserOp1] = useState('?');
+            const [userOp2, setUserOp2] = useState('?');
             const [errorMsg, setErrorMsg] = useState('');
 
             const checkAnswer = () => {
+                if (userOp1 !== op1) { setErrorMsg('第一個計算符號選錯了！'); return; }
+                if (userOp2 !== op2) { setErrorMsg('第二個計算符號選錯了！'); return; }
+
                 let u1 = parseInt(inputs1.map(d => d===''?' ':d).join('').replace(/\s/g, ''));
                 let u2 = parseInt(inputs2.map(d => d===''?' ':d).join('').replace(/\s/g, ''));
                 if (u1 !== step1Ans) { setErrorMsg('第一步算錯了 (中間那行)'); return; }
@@ -163,16 +197,26 @@
 
             return (
                 <div className="bg-white p-6 rounded-2xl border-2 border-slate-200 shadow-sm max-w-sm mx-auto animate-in zoom-in-95">
-                    <div className="grid grid-cols-5 gap-1 font-mono">
+                    <div className="grid grid-cols-5 gap-1 font-mono items-center">
                         <div className="col-span-1"></div>{digits1.map((d, i) => <div key={`d1-${i}`} className="h-8 flex items-center justify-center text-2xl font-black text-slate-700">{d}</div>)}
-                        <div className="col-span-1 text-2xl font-black text-slate-400">{op1}</div>{digits2.map((d, i) => <div key={`d2-${i}`} className="h-8 flex items-center justify-center text-2xl font-black text-slate-700">{d}</div>)}
+                        
+                        <select value={userOp1} onChange={e=>{setUserOp1(e.target.value); setErrorMsg('');}} className="op-select col-span-1 text-2xl font-black text-blue-600 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                            <option value="?">?</option><option value="+">+</option><option value="-">-</option>
+                        </select>
+                        {digits2.map((d, i) => <div key={`d2-${i}`} className="h-8 flex items-center justify-center text-2xl font-black text-slate-700">{d}</div>)}
+                        
                         <div className="col-span-1"></div>{carries1.map((v, i) => <div key={`c1-${i}`} className="flex items-end justify-center"><input className="carry-input" value={v} placeholder="." onChange={e=>setCarries1(p=>{const n=[...p];n[i]=e.target.value.slice(-2);return n;})} /></div>)}
                         <div className="col-span-5 calc-line"></div>
-                        <div className="col-span-1"></div>{inputs1.map((v, i) => <input key={`in1-${i}`} type="number" className={`digit-input h-10 ${v!=='' && digitsStep1[i]!==' ' && v!==digitsStep1[i] ? 'bg-red-50 border-red-300 text-red-600' : ''}`} value={v} disabled={digitsStep1[i]===' '} onChange={e => {setInputs1(p=>{const n=[...p];n[i]=e.target.value.slice(-1);return n;}); setErrorMsg('');}} />)}
-                        <div className="col-span-1 text-2xl font-black text-slate-400 mt-2">{op2}</div>{digits3.map((d, i) => <div key={`d3-${i}`} className="h-8 flex items-center justify-center text-2xl font-black text-slate-700 mt-2">{d}</div>)}
+                        <div className="col-span-1"></div>{inputs1.map((v, i) => <input key={`in1-${i}`} type="number" className={`digit-input h-10 ${v!=='' && digitsStep1[i]!==' ' && v!==digitsStep1[i] ? 'bg-red-50 border-red-300' : ''}`} value={v} disabled={digitsStep1[i]===' '} onChange={e => {setInputs1(p=>{const n=[...p];n[i]=e.target.value.slice(-1);return n;}); setErrorMsg('');}} />)}
+                        
+                        <select value={userOp2} onChange={e=>{setUserOp2(e.target.value); setErrorMsg('');}} className="op-select col-span-1 text-2xl font-black text-blue-600 bg-blue-50 border-2 border-blue-200 rounded-lg mt-2">
+                            <option value="?">?</option><option value="+">+</option><option value="-">-</option>
+                        </select>
+                        {digits3.map((d, i) => <div key={`d3-${i}`} className="h-8 flex items-center justify-center text-2xl font-black text-slate-700 mt-2">{d}</div>)}
+                        
                         <div className="col-span-1"></div>{carries2.map((v, i) => <div key={`c2-${i}`} className="flex items-end justify-center mt-1"><input className="carry-input" value={v} placeholder="." onChange={e=>setCarries2(p=>{const n=[...p];n[i]=e.target.value.slice(-2);return n;})} /></div>)}
                         <div className="col-span-5 calc-line"></div>
-                        <div className="col-span-1"></div>{inputs2.map((v, i) => <input key={`in2-${i}`} type="number" className={`digit-input h-10 ${v!=='' && digitsFinal[i]!==' ' && v!==digitsFinal[i] ? 'bg-red-50 border-red-300 text-red-600' : ''}`} value={v} disabled={digitsFinal[i]===' '} onChange={e => {setInputs2(p=>{const n=[...p];n[i]=e.target.value.slice(-1);return n;}); setErrorMsg('');}} />)}
+                        <div className="col-span-1"></div>{inputs2.map((v, i) => <input key={`in2-${i}`} type="number" className={`digit-input h-10 ${v!=='' && digitsFinal[i]!==' ' && v!==digitsFinal[i] ? 'bg-red-50 border-red-300' : ''}`} value={v} disabled={digitsFinal[i]===' '} onChange={e => {setInputs2(p=>{const n=[...p];n[i]=e.target.value.slice(-1);return n;}); setErrorMsg('');}} />)}
                     </div>
                     {errorMsg && <div className="mt-3 text-center text-rose-500 font-bold text-sm bg-rose-50 p-2 rounded">{errorMsg}</div>}
                     <button onClick={checkAnswer} className="mt-5 w-full bg-indigo-600 text-white py-3 rounded-xl font-black shadow-md active:scale-95 transition-all hover:bg-indigo-700">檢查全式</button>
@@ -183,14 +227,16 @@
         const VerticalMulti = ({ n1, n2, onComplete }) => {
             const digits1 = n1.toString().padStart(3, ' ').split('');
             const [inputs, setInputs] = useState(['', '', '', '']); const [carries, setCarries] = useState(['', '', '']);
+            const [userOp, setUserOp] = useState('?');
             const [errorMsg, setErrorMsg] = useState('');
             const correctAns = n1 * n2;
             const correctDigits = correctAns.toString().padStart(4, ' ').split('');
 
             const checkAnswer = () => {
+                if (userOp !== '×') { setErrorMsg('請選擇正確的計算符號！(應該是乘法喔)'); return; }
                 let userNumStr = inputs.map(d => d === '' ? ' ' : d).join('');
                 if (parseInt(userNumStr.replace(/\s/g, '')) === correctAns) onComplete(correctAns);
-                else setErrorMsg('乘法算錯囉！進位寫在上面。');
+                else setErrorMsg('乘法算錯囉！記得加進位。');
             };
 
             return (
@@ -198,7 +244,13 @@
                     <div className="grid grid-cols-5 gap-2 font-mono">
                         <div className="col-span-2"></div>{carries.map((v, i) => <input key={i} className="carry-input" placeholder="進" value={v} onChange={e=>setCarries(p=>{const n=[...p];n[i]=e.target.value.slice(-1);return n;})} />)}
                         <div className="col-span-2"></div>{digits1.map((d, i) => <div key={i} className="h-10 flex items-center justify-center text-3xl font-black text-slate-700">{d}</div>)}
-                        <div className="col-span-1 text-right text-3xl font-black text-slate-400 mr-2">×</div><div className="col-span-3"></div><div className="col-span-1 h-10 flex items-center justify-center text-3xl font-black text-slate-700">{n2}</div>
+                        
+                        <select value={userOp} onChange={e=>{setUserOp(e.target.value); setErrorMsg('');}} className="op-select col-span-1 text-3xl font-black text-blue-600 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                            <option value="?">?</option><option value="+">+</option><option value="-">-</option><option value="×">×</option>
+                        </select>
+
+                        <div className="col-span-1 h-10 flex items-center justify-center text-3xl font-black text-slate-700">{n2}</div>
+                        <div className="col-span-1"></div> {/* alignment */}
                         <div className="col-span-5 calc-line"></div>
                         <div className="col-span-1"></div>{inputs.map((v, i) => <input key={i} type="number" className={`digit-input h-14 ${v!=='' && correctDigits[i]!==' ' && v!==correctDigits[i] ? 'bg-red-50 border-red-300 text-red-600' : ''}`} value={v} disabled={correctDigits[i]===' '} placeholder={correctDigits[i]===' '?'':'?'} onChange={e => {setInputs(p=>{const n=[...p];n[i]=e.target.value.slice(-1);return n;}); setErrorMsg('');}} />)}
                     </div>
@@ -216,7 +268,7 @@
 
             return (
                 <div className="flex flex-col items-center">
-                    <svg width="180" height="180" viewBox="0 0 200 200" className="drop-shadow-lg my-4">
+                    <svg width="180" height="180" viewBox="0 0 200 200" className="drop-shadow-lg my-4 bg-white rounded-full">
                         <circle cx="100" cy="100" r="95" fill="white" stroke="#334155" strokeWidth="6" />
                         {[...Array(12)].map((_, i) => <text key={i} x={100+75*Math.sin((i+1)*Math.PI/6)} y={105-75*Math.cos((i+1)*Math.PI/6)} textAnchor="middle" className="font-bold text-lg font-mono" fill="#64748b">{i+1}</text>)}
                         <line x1="100" y1="100" x2={100+50*Math.sin(hourAngle*Math.PI/180)} y2={100-50*Math.cos(hourAngle*Math.PI/180)} stroke="#1e293b" strokeWidth="6" strokeLinecap="round" />
@@ -242,18 +294,11 @@
             const shuffle = (arr) => arr.sort(() => Math.random() - 0.5);
 
             const allQs = [
-                // 1. 數字讀法 (新增：要求輸入中文)
+                // 1. 數字讀法
                 (() => { 
-                    const numMap = [
-                        {n: 54047, c: '五萬四千零四十七'}, {n: 30205, c: '三萬零二百零五'},
-                        {n: 80016, c: '八萬零一十六'}, {n: 12003, c: '一萬二千零三'},
-                        {n: 40500, c: '四萬零五百'}
-                    ];
+                    const numMap = [{n: 54047, c: '五萬四千零四十七'}, {n: 30205, c: '三萬零二百零五'}, {n: 80016, c: '八萬零一十六'}, {n: 12003, c: '一萬二千零三'}, {n: 40500, c: '四萬零五百'}];
                     const pair = numMap[rand(0, numMap.length - 1)];
-                    return { 
-                        id: 1, title: '數字讀法', text: `「${pair.n}」讀作什麼？`, 
-                        steps: [{ type: 'TEXT_INPUT', label: '請用中文字寫出讀法', correct: pair.c, hint: '注意「零」的寫法，並且不要打錯字喔！' }]
-                    }; 
+                    return { id: 1, title: '數字讀法', text: `「${pair.n}」讀作什麼？`, steps: [{ type: 'TEXT_INPUT', label: '請用中文字寫出讀法', correct: pair.c, hint: '注意「零」的寫法，不要打錯字喔！' }] }; 
                 })(),
                 
                 // 2-8 運算題
@@ -310,19 +355,20 @@
                     const cousin = mom + diff;
                     const finalAns = dad - cousin;
                     return { id: 24, title: '三數比較題 (重點特訓)', text: `爸爸有 $${dad}，媽媽有 $${mom}。媽媽比表姐少 $${diff}。問爸爸比表姐多幾元？`, steps: [
-                        {type:'LOGIC', text: 'Step 1: 先把題目寫成一條綜合算式。請問哪一條是正確的？', options: shuffle([`${dad} - (${mom} + ${diff})`, `${dad} - ${mom} + ${diff}`, `(${dad} - ${mom}) - ${diff}`, `${dad} + ${mom} - ${diff}`]), ans: `${dad} - (${mom} + ${diff})`},
+                        {type:'LOGIC', text: 'Step 1: 媽媽比表姐少，即表姐較多。先把題目寫成一條綜合算式。請問哪一條是正確的？', options: shuffle([`${dad} - (${mom} + ${diff})`, `${dad} - ${mom} + ${diff}`, `(${dad} - ${mom}) - ${diff}`, `${dad} + ${mom} - ${diff}`]), ans: `${dad} - (${mom} + ${diff})`},
                         {type:'ADD', n1: mom, n2: diff, hint: 'Step 2: 先計算括弧內的部分（找出表姐的錢）'},
-                        {type:'SUB', n1: dad, n2: cousin, hint: 'Step 3: 用爸爸的錢減去表姐的錢'},
+                        {type:'SUB', n1: dad, n2: cousin, hint: 'Step 3: 用爸爸的錢減去剛才算出的表姐的錢'},
                         {type:'INPUT_CHECK', label: 'Step 4: 填寫文字答句：爸爸比表姐多 _____ 元。', correct: finalAns.toString(), hint: '把剛才直式最後的答案填入句子中'}
                     ]};
                 })()
             ];
 
-            return shuffle(allQs); // 打亂全部題目
+            return shuffle(allQs);
         };
 
         const App = () => {
             const [mode, setMode] = useState('MENU');
+            const [devMode, setDevMode] = useState(false); // 開發者測試模式
             const [questions, setQuestions] = useState([]);
             const [qIndex, setQIndex] = useState(0);
             const [stepIndex, setStepIndex] = useState(0);
@@ -340,6 +386,18 @@
                 setQIndex(0); setStepIndex(0); setScore(0); setMistakeList([]); setTimer(0); setMode('GAME');
             };
 
+            const jumpToQuestion = (targetId) => {
+                const newQs = generateQuizData();
+                // 為了方便測試，不打亂次序，直接找對應 ID 的題目放到第一題
+                const targetQIndex = newQs.findIndex(q => q.id === parseInt(targetId));
+                if(targetQIndex > -1){
+                    const targetQ = newQs.splice(targetQIndex, 1)[0];
+                    newQs.unshift(targetQ); // 放到第一位
+                }
+                setQuestions(newQs);
+                setQIndex(0); setStepIndex(0); setScore(0); setMistakeList([]); setTimer(0); setMode('GAME');
+            }
+
             const currentQ = questions[qIndex] || {};
             const currentStep = currentQ.steps ? currentQ.steps[stepIndex] : {};
             const progress = questions.length > 0 ? ((qIndex) / questions.length) * 100 : 0;
@@ -355,7 +413,7 @@
                 if (mode === 'GAME' && currentStep.type === 'CLOCK_INTERACTIVE') {
                     setClockState({ h: currentStep.startH || 12, m: currentStep.startM || 0 });
                 }
-                setShowHint(false); // 切換步驟時隱藏提示
+                setShowHint(false);
             }, [qIndex, stepIndex, mode, questions]);
 
             const showPraiseText = () => {
@@ -380,7 +438,6 @@
                 else { markMistake(`填寫錯誤：填了 ${val} (正確: ${currentStep.correct})`); alert(`答案不對喔！`); }
             };
             
-            // 處理中文文字輸入的驗證 (將 〇 轉換為 零)
             const handleTextInputCheck = (val, correctAns) => {
                 const normalizedVal = val.replace(/〇/g, '零').replace(/\s+/g, '');
                 const normalizedCorrect = correctAns.replace(/〇/g, '零').replace(/\s+/g, '');
@@ -411,6 +468,12 @@
                     else setMode('RESULT');
                 }
             };
+            
+            // 家長專用：強制跳過此題
+            const forceSkipQuestion = () => {
+                if (qIndex < questions.length - 1) { setQIndex(q => q + 1); setStepIndex(0); setShowHint(false); } 
+                else setMode('RESULT');
+            }
 
             const renderHint = (hintText) => {
                 if (!hintText) return null;
@@ -444,17 +507,34 @@
             };
 
             if (mode === 'MENU') return (
-                <div className="min-h-screen flex items-center justify-center p-4">
+                <div className="min-h-screen flex flex-col items-center justify-center p-4">
                     <div className="bg-white rounded-[2.5rem] p-8 md:p-12 max-w-lg w-full shadow-2xl text-center border border-slate-100">
                         <div className="inline-block p-4 bg-indigo-100 rounded-full text-indigo-600 mb-6"><Icon.Brain/></div>
-                        <h1 className="text-3xl font-black text-slate-800 mb-2">Jasper 數學 V8.3</h1>
-                        <p className="text-indigo-500 font-bold mb-8 uppercase tracking-widest">深度拆解特訓版</p>
+                        <h1 className="text-3xl font-black text-slate-800 mb-2">Jasper 數學 V8.4</h1>
+                        <p className="text-indigo-500 font-bold mb-8 uppercase tracking-widest">開發者測試 + 終極拆解版</p>
                         <div className="text-left bg-slate-50 p-6 rounded-2xl mb-8 space-y-3 text-slate-600 font-bold text-sm">
-                            <p>✍️ 新增中文字數字寫法</p>
-                            <p>🧩 終極四步拆解文字題</p>
-                            <p>💡 隱藏式提示訓練獨立思考</p>
+                            <p>📝 新增：直式必須自己選計算符號！</p>
+                            <p>⚙️ 新增：家長專用測試面板 (可跳題)</p>
+                            <p>🧪 修復：量杯不會再變白畫面了</p>
                         </div>
-                        <button onClick={startQuiz} className="w-full bg-indigo-600 text-white text-xl font-black py-5 rounded-2xl shadow-xl hover:bg-indigo-700 active:scale-95 transition-all">開始特訓</button>
+                        <button onClick={startQuiz} className="w-full bg-indigo-600 text-white text-xl font-black py-5 rounded-2xl shadow-xl hover:bg-indigo-700 active:scale-95 transition-all">正常開始特訓</button>
+                    </div>
+                    
+                    {/* 家長測試面板開關 */}
+                    <div className="mt-8 text-center">
+                        <button onClick={() => setDevMode(!devMode)} className="text-xs text-slate-400 font-bold hover:text-slate-600">
+                            ⚙️ {devMode ? '隱藏' : '顯示'}家長測試面板
+                        </button>
+                        {devMode && (
+                            <div className="mt-4 bg-white p-4 rounded-xl shadow border border-slate-200 max-w-lg mx-auto flex flex-wrap gap-2 justify-center">
+                                <div className="w-full text-xs font-bold text-slate-500 mb-2">點擊即可直接測試該題型：</div>
+                                <button onClick={() => jumpToQuestion(13)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">Q13 量杯</button>
+                                <button onClick={() => jumpToQuestion(1)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">Q1 讀中文字</button>
+                                <button onClick={() => jumpToQuestion(24)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">Q24 爸爸表姐題</button>
+                                <button onClick={() => jumpToQuestion(23)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">Q23 購物圖表</button>
+                                <button onClick={() => jumpToQuestion(4)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">Q4 連式直式</button>
+                            </div>
+                        )}
                     </div>
                 </div>
             );
@@ -491,7 +571,14 @@
                     
                     <div className="flex justify-between items-center mb-6">
                         <div className="flex items-center gap-3 px-5 py-3 bg-white rounded-2xl font-bold text-slate-600 shadow-sm border border-slate-100"><span>Q {qIndex + 1} / {questions.length}</span></div>
-                        <div className="flex items-center gap-3 px-5 py-3 bg-white rounded-2xl font-bold text-indigo-600 shadow-sm border border-slate-100"><Icon.Clock/> <span>{Math.floor(timer/60)}:{timer%60 < 10 ? '0'+timer%60 : timer%60}</span></div>
+                        <div className="flex items-center gap-2">
+                            {devMode && (
+                                <button onClick={forceSkipQuestion} className="flex items-center gap-1 px-3 py-2 bg-slate-800 text-white rounded-xl font-bold text-xs shadow-sm hover:bg-slate-700 active:scale-95">
+                                    <Icon.FastForward /> 跳過
+                                </button>
+                            )}
+                            <div className="flex items-center gap-3 px-5 py-3 bg-white rounded-2xl font-bold text-indigo-600 shadow-sm border border-slate-100"><Icon.Clock/> <span>{Math.floor(timer/60)}:{timer%60 < 10 ? '0'+timer%60 : timer%60}</span></div>
+                        </div>
                     </div>
                     
                     <div className="w-full bg-slate-200 h-2 rounded-full mb-6 overflow-hidden"><div className="bg-indigo-500 h-full transition-all duration-500" style={{width: `${progress}%`}}></div></div>
@@ -501,7 +588,10 @@
                             <div className="inline-block px-3 py-1 rounded-full bg-indigo-100 text-indigo-600 text-xs font-black uppercase tracking-widest mb-3">{currentQ.title}</div>
                             <h2 className="text-3xl font-black text-slate-800 leading-snug">{currentQ.text}</h2>
                             
-                            {/* 放大版的筆記簿視覺 */}
+                            {currentQ.isBeaker && <BeakerView capacity={currentQ.cap} level={currentQ.lvl} label="量杯" />}
+                            {currentQ.isAbacus && <AbacusView number={currentQ.val} />}
+                            {currentQ.isPictogram && <PictogramView data={currentQ.data} title="3E班興趣班統計" />}
+                            
                             {currentQ.extraInfo && (
                                 <div className="mt-8 flex justify-center gap-4 sm:gap-8 relative">
                                     <div className="bg-white border-2 border-slate-200 border-l-[12px] border-l-amber-400 w-24 sm:w-28 h-32 sm:h-36 flex flex-col items-center justify-center rounded-r-2xl shadow-md transform -rotate-3 transition-transform hover:scale-105">
