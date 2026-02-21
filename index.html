@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Jasper 數學模擬試卷 V9.3 (修正算術與排版)</title>
+    <title>Jasper 數學模擬試卷 V9.4 (真題全隨機版)</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -69,12 +69,12 @@
             );
         };
 
-        const ThreeBeakersView = () => {
+        const ThreeBeakersView = ({ labels }) => {
             return (
                 <div className="flex justify-center items-end gap-2 my-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                    <BeakerView capacity={500} level={500} label="量杯 A" />
-                    <BeakerView capacity={2000} level={200} label="量杯 B" />
-                    <BeakerView capacity={1000} level={500} label="量杯 C" />
+                    <BeakerView capacity={labels[0].c} level={labels[0].l} label={labels[0].n} />
+                    <BeakerView capacity={labels[1].c} level={labels[1].l} label={labels[1].n} />
+                    <BeakerView capacity={labels[2].c} level={labels[2].l} label={labels[2].n} />
                 </div>
             );
         };
@@ -306,20 +306,28 @@
             );
         };
 
-        // --- 題庫生成器 ---
+        // --- 核心功能：真題隨機生成器 ---
         const generateQuizData = () => {
             const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
             const shuffle = (arr) => arr.sort(() => Math.random() - 0.5);
 
             const allQs = [
+                // Q1: 數字讀法 (全隨機)
                 (() => { 
-                    const numMap = [{n: 54047, c: '五萬四千零四十七'}, {n: 30205, c: '三萬零二百零五'}, {n: 80016, c: '八萬零一十六'}, {n: 12003, c: '一萬二千零三'}, {n: 40500, c: '四萬零五百'}];
+                    const numMap = [
+                        {n: 54047, c: '五萬四千零四十七'}, {n: 30205, c: '三萬零二百零五'}, 
+                        {n: 80016, c: '八萬零一十六'}, {n: 12003, c: '一萬二千零三'}, 
+                        {n: 40500, c: '四萬零五百'}, {n: 60302, c: '六萬零三百零二'},
+                        {n: 90001, c: '九萬零一'}, {n: 24050, c: '二萬四千零五十'},
+                        {n: 70108, c: '七萬零一百零八'}, {n: 10010, c: '一萬零一十'}
+                    ];
                     const pair = numMap[rand(0, numMap.length - 1)];
                     return { id: 1, title: '數字讀法', text: `「${pair.n}」讀作什麼？`, steps: [{ type: 'TEXT_INPUT', label: '請用中文字寫出讀法', correct: pair.c, hint: '注意「零」的寫法，不要打錯字喔！' }] }; 
                 })(),
                 
+                // Q2: 數字排列 (全隨機)
                 (() => {
-                    const base = rand(3, 8); const n1 = base * 10000 + 3003; const n2 = base * 10000 + 303; const n3 = base * 10000 + 33;
+                    const base = rand(2, 9); const n1 = base * 10000 + 3003; const n2 = base * 10000 + 303; const n3 = base * 10000 + 33;
                     const sorted = [n3, n2, n1];
                     return { id: 2, title: '數字排列', text: `請把各數由小至大排列出來：\n${n1} 、 ${n2} 、 ${n3}`, steps: [
                         { type: 'INPUT_CHECK', label: '最小的數 (第一格)', correct: sorted[0].toString(), hint: '先比較千位數字，越小越排前面' },
@@ -328,20 +336,26 @@
                     ]};
                 })(),
                 
-                { id: 3, title: '算柱與奇數', text: `用 3 粒算珠在算柱上表示「最小的五位奇數」。`, steps: [
-                    { type: 'LOGIC', text: '五位數的萬位最少要放幾多粒珠？', options: shuffle(['1粒', '2粒', '3粒', '0粒']), ans: '1粒' },
-                    { type: 'LOGIC', text: '要成為「奇數」，個位最少要放幾多粒珠？', options: shuffle(['1粒', '2粒', '3粒', '0粒']), ans: '1粒' },
-                    { type: 'INPUT_CHECK', label: '用 3 粒珠砌出最小五位奇數，這個數是？', correct: '10011', hint: '萬位放1粒，個位放1粒，剩下1粒放哪裡最小？' }
-                ]},
+                // Q3: 算柱奇數 (隨機珠數 3,4,5)
+                (() => {
+                    const beadsMap = [{b: 3, a: '10011'}, {b: 4, a: '10003'}, {b: 5, a: '10013'}];
+                    const choice = beadsMap[rand(0, 2)];
+                    return { id: 3, title: '算柱與奇數', text: `用 ${choice.b} 粒算珠在算柱上表示「最小的五位奇數」。`, steps: [
+                        { type: 'LOGIC', text: '五位數的萬位最少要放幾多粒珠？', options: shuffle(['1粒', '2粒', '3粒', '0粒']), ans: '1粒' },
+                        { type: 'LOGIC', text: '要成為「奇數」，個位必須放單數的珠，最少要放？', options: shuffle(['1粒', '3粒', '2粒', '0粒']), ans: '1粒' },
+                        { type: 'INPUT_CHECK', label: `用 ${choice.b} 粒珠砌出最小五位奇數，這個數是？`, correct: choice.a, hint: '把剩下的珠放在盡量細的位值上' }
+                    ]};
+                })(),
                 
+                // Q4-Q5: 四位數運算
                 (() => { const a=rand(6000,9000), b=rand(1000,5000); return { id: 4, title: '四位數減法', text: `${a} - ${b} = ?`, steps: [{ type: 'LOGIC', text: '這是一條純減法。', options: shuffle(['開始計算', '心算', '直接寫答案', '放棄']), ans: '開始計算' }, { type: 'SUB', n1: a, n2: b, hint: '小心借位' }]}; })(),
                 (() => { const a=rand(1000,4000), b=rand(2000,5000); return { id: 5, title: '四位數加法', text: `${a} + ${b} = ?`, steps: [{ type: 'LOGIC', text: '這是一條純加法。', options: shuffle(['開始計算', '心算', '直接寫答案', '放棄']), ans: '開始計算' }, { type: 'ADD', n1: a, n2: b, hint: '要小心連續進位' }]}; })(),
                 
+                // Q6: 貨幣與括號 (全隨機，防負數)
                 (() => { 
-                    const dA=rand(30,50), dB=rand(2,8), cB=rand(1,9), dC=rand(10,20), cC=rand(1,9); 
+                    const dA=rand(20,60), dB=rand(2,8), cB=rand(1,9), dC=rand(10,20), cC=rand(1,9); 
                     const v1 = dB*10 + cB; const v2 = dC*10 + cC; 
-                    const safe_dA = Math.max(dA, Math.ceil((v1+v2)/10) + rand(5, 10));
-                    // 修正：1元 = 10角，所以 safe_dA 元 = safe_dA * 10 角
+                    const safe_dA = Math.max(dA, Math.ceil((v1+v2)/10) + rand(2, 5));
                     const total = safe_dA * 10; 
                     const ans = total - (v1+v2);
                     return { id: 6, title: '貨幣與括號', text: `${safe_dA}元 - (${dB}元${cB}角 + ${dC}元${cC}角) = ?`, steps: [
@@ -352,49 +366,69 @@
                     ]}; 
                 })(),
 
-                (() => { const b=rand(3,9); return { id: 7, title: '連乘法巧算', text: `20 × ${b} × 5 = ?`, steps: [
-                    { type: 'LOGIC', text: '巧算：先算哪兩個數相乘會得出整數 (例如 100)？', options: shuffle([`20 × 5`, `20 × ${b}`, `${b} × 5`, `都不對`]), ans: `20 × 5` }, 
-                    { type: 'INPUT_CHECK', label: `20 × 5 = ?`, correct: '100', hint: '心算' }, 
-                    { type: 'INPUT_CHECK', label: `最後答案：100 × ${b} = ?`, correct: (100*b).toString(), hint: '心算' }
-                ]}; })(),
+                // Q7: 連乘巧算 (隨機搭配)
+                (() => { 
+                    const pairs = [{a:20, c:5, m:100}, {a:25, c:4, m:100}, {a:50, c:2, m:100}];
+                    const p = pairs[rand(0,2)]; const b=rand(3,9); 
+                    return { id: 7, title: '連乘法巧算', text: `${p.a} × ${b} × ${p.c} = ?`, steps: [
+                        { type: 'LOGIC', text: `巧算：先算哪兩個數相乘會得出整數 (例如 ${p.m})？`, options: shuffle([`${p.a} × ${p.c}`, `${p.a} × ${b}`, `${b} × ${p.c}`, `都不對`]), ans: `${p.a} × ${p.c}` }, 
+                        { type: 'INPUT_CHECK', label: `${p.a} × ${p.c} = ?`, correct: p.m.toString(), hint: '心算' }, 
+                        { type: 'INPUT_CHECK', label: `最後答案：${p.m} × ${b} = ?`, correct: (p.m*b).toString(), hint: '心算' }
+                    ]}; 
+                })(),
 
-                (() => { const a=4037, b=3219, target=2717; return { id: 8, title: '逆向思維', text: `${a} + ${b} - 😊 = ${target}。😊 是多少？`, steps: [
-                    { type: 'LOGIC', text: 'Step 1: 先把前面可以加的數字加起來。', options: shuffle([`${a} + ${b}`, `${a} - ${target}`, `${b} + ${target}`, `${a} + ${target}`]), ans: `${a} + ${b}` }, 
-                    { type: 'ADD', n1: a, n2: b, hint: '用直式先算加法' }, 
-                    { type: 'LOGIC', text: `Step 2: ${a+b} - 😊 = ${target}。要找出 😊，算式是？`, options: shuffle([`${a+b} - ${target}`, `${a+b} + ${target}`, `${target} - ${a+b}`, `${target} + ${a+b}`]), ans: `${a+b} - ${target}` },
-                    { type: 'SUB', n1: a+b, n2: target, hint: '用直式找出 😊' }
-                ]}; })(),
+                // Q8: 逆向代數 (全隨機防負數)
+                (() => { 
+                    const a=rand(3000, 4999), b=rand(2000, 3999), target=rand(1000, 2999); 
+                    return { id: 8, title: '逆向思維', text: `${a} + ${b} - 😊 = ${target}。😊 是多少？`, steps: [
+                        { type: 'LOGIC', text: 'Step 1: 先把前面可以加的數字加起來。', options: shuffle([`${a} + ${b}`, `${a} - ${target}`, `${b} + ${target}`, `${a} + ${target}`]), ans: `${a} + ${b}` }, 
+                        { type: 'ADD', n1: a, n2: b, hint: '用直式先算加法' }, 
+                        { type: 'LOGIC', text: `Step 2: ${a+b} - 😊 = ${target}。要找出 😊，算式是？`, options: shuffle([`${a+b} - ${target}`, `${a+b} + ${target}`, `${target} - ${a+b}`, `${target} + ${a+b}`]), ans: `${a+b} - ${target}` },
+                        { type: 'SUB', n1: a+b, n2: target, hint: '用直式找出 😊' }
+                    ]}; 
+                })(),
 
-                (() => { const a=rand(1000,1200), b=rand(3000,3200), c=rand(1400,1600); return { id: 9, title: '三數連加', text: `圖書館第一層有 ${a} 本，第二層 ${b} 本，第三層 ${c} 本。共有多少本？`, steps: [
+                // Q9: 連加
+                (() => { const a=rand(1000,1200), b=rand(2000,3200), c=rand(1400,1600); return { id: 9, title: '三數連加', text: `圖書館第一層有 ${a} 本，第二層 ${b} 本，第三層 ${c} 本。共有多少本？`, steps: [
                     { type: 'LOGIC', text: '求總數，將三層的書本相加。', options: shuffle(['開始連加計算', '分開算', '乘法計算', '減法計算']), ans: '開始連加計算' }, 
                     { type: 'CONTINUOUS', n1: a, n2: b, n3: c, op1: '+', op2: '+', hint: '請用連加直式計算' }
                 ]}; })(),
 
-                (() => { const price=rand(2000,2400), pay=5000; return { id: 10, title: '找贖問題', text: `陳先生買了 2 部吸塵機，每部 $${price}。他付 $${pay}，應找回多少元？`, steps: [
-                    { type: 'LOGIC', text: 'Step 1: 先算 2 部吸塵機的總價', options: shuffle([`${price} × 2`, `${pay} - ${price}`, `${price} + 2`, `${pay} × 2`]), ans: `${price} × 2` }, 
-                    { type: 'MULTI', n1: price, n2: 2, hint: '直式計算總價' }, 
-                    { type: 'LOGIC', text: `Step 2: 用 $${pay} 減去總價 ${price*2}`, options: shuffle([`${pay} - ${price*2}`, `${price*2} - ${pay}`, `${pay} + ${price*2}`, `${price*2} + ${pay}`]), ans: `${pay} - ${price*2}` },
-                    { type: 'SUB', n1: pay, n2: price*2, hint: '直式計算找贖 (小心借位)' }
+                // Q10: 找贖問題
+                (() => { const price=rand(1000,2400), qty=rand(2,4), pay=qty*price > 5000 ? 10000 : 5000; return { id: 10, title: '找贖問題', text: `陳先生買了 ${qty} 部機器，每部 $${price}。他付 $${pay}，應找回多少元？`, steps: [
+                    { type: 'LOGIC', text: `Step 1: 先算 ${qty} 部機器的總價`, options: shuffle([`${price} × ${qty}`, `${pay} - ${price}`, `${price} + ${qty}`, `${pay} × ${qty}`]), ans: `${price} × ${qty}` }, 
+                    { type: 'MULTI', n1: price, n2: qty, hint: '直式計算總價' }, 
+                    { type: 'LOGIC', text: `Step 2: 用 $${pay} 減去總價 ${price*qty}`, options: shuffle([`${pay} - ${price*qty}`, `${price*qty} - ${pay}`, `${pay} + ${price*qty}`, `${price*qty} + ${pay}`]), ans: `${pay} - ${price*qty}` },
+                    { type: 'SUB', n1: pay, n2: price*qty, hint: '直式計算找贖 (小心借位)' }
                 ]}; })(),
 
-                (() => { const a=rand(1300,1500), b=rand(400,500), c=rand(40,60); return { id: 11, title: '連減法', text: `${a} - ${b} - ${c} = ?`, steps: [
+                // Q11-Q12: 減法與括號
+                (() => { const a=rand(1300,1900), b=rand(400,600), c=rand(40,90); return { id: 11, title: '連減法', text: `${a} - ${b} - ${c} = ?`, steps: [
                     { type: 'LOGIC', text: '純連減法。', options: shuffle(['開始連減計算', '分開算', '加法計算', '跳過']), ans: '開始連減計算' }, 
                     { type: 'CONTINUOUS', n1: a, n2: b, n3: c, op1: '-', op2: '-', hint: '請用連減直式計算' }
                 ]}; })(),
-
-                (() => { const a=rand(600,800), b=rand(200,300), c=rand(80,150); return { id: 12, title: '括號減法', text: `${a} - (${b} + ${c}) = ?`, steps: [
+                (() => { const a=rand(600,900), b=rand(200,300), c=rand(80,150); return { id: 12, title: '括號減法', text: `${a} - (${b} + ${c}) = ?`, steps: [
                     { type: 'LOGIC', text: '有括弧，第一步先算？', options: shuffle([`${b} + ${c}`, `${a} - ${b}`, `${a} + ${c}`, `${a} - ${c}`]), ans: `${b} + ${c}` }, 
                     { type: 'ADD', n1: b, n2: c, hint: '直式計算括弧內' }, 
                     { type: 'SUB', n1: a, n2: b+c, hint: '最後計算減法' }
                 ]}; })(),
 
-                (() => { const a=200, b=8, c=5; return { id: 13, title: '連續除法', text: `${a} ÷ ${b} ÷ ${c} = ?`, steps: [
-                    { type: 'LOGIC', text: '從左到右算，第一步先算什麼？', options: shuffle([`${a} ÷ ${b}`, `${b} ÷ ${c}`, `${a} × ${b}`, `${b} × ${c}`]), ans: `${a} ÷ ${b}` }, 
-                    { type: 'INPUT_CHECK', label: `${a} ÷ ${b} = ?`, correct: (a/b).toString(), hint: '心算' }, 
-                    { type: 'INPUT_CHECK', label: `再除以 ${c}，答案是？`, correct: ((a/b)/c).toString(), hint: '心算' }
+                // Q13: 連續除法 (完美整除隨機)
+                (() => { 
+                    const divSets = [
+                        {a: 200, b: 8, c: 5}, {a: 400, b: 8, c: 5}, {a: 600, b: 8, c: 5},
+                        {a: 300, b: 6, c: 5}, {a: 600, b: 6, c: 5}, {a: 240, b: 6, c: 8},
+                        {a: 120, b: 4, c: 6}, {a: 360, b: 9, c: 4}, {a: 180, b: 6, c: 5}, {a: 240, b: 8, c: 6}
+                    ];
+                    const s = divSets[rand(0, divSets.length-1)];
+                    return { id: 13, title: '連續除法', text: `${s.a} ÷ ${s.b} ÷ ${s.c} = ?`, steps: [
+                    { type: 'LOGIC', text: '從左到右算，第一步先算什麼？', options: shuffle([`${s.a} ÷ ${s.b}`, `${s.b} ÷ ${s.c}`, `${s.a} × ${s.b}`, `${s.b} × ${s.c}`]), ans: `${s.a} ÷ ${s.b}` }, 
+                    { type: 'INPUT_CHECK', label: `${s.a} ÷ ${s.b} = ?`, correct: (s.a/s.b).toString(), hint: '心算' }, 
+                    { type: 'INPUT_CHECK', label: `再除以 ${s.c}，答案是？`, correct: ((s.a/s.b)/s.c).toString(), hint: '心算' }
                 ]}; })(),
 
-                (() => { const q=rand(40,49), d=6; const maxRem = d-1; const maxA = q*d + maxRem; const hDigit = Math.floor(maxA/100); return { id: 14, title: '除法與餘數', text: `「 ✡️ ÷ ${d} = ${q} ... 😊 」。✡️ 是一個三位數，它的百位數字最大可能是多少？`, steps: [
+                // Q14: 除法餘數最大值估算 (全隨機)
+                (() => { const q=rand(20,60), d=rand(4,9); const maxRem = d-1; const maxA = q*d + maxRem; const hDigit = Math.floor(maxA/100); return { id: 14, title: '除法與餘數', text: `「 ✡️ ÷ ${d} = ${q} ... 😊 」。✡️ 是一個三位數，它的百位數字最大可能是多少？`, steps: [
                     { type: 'LOGIC', text: 'Step 1: 被除數 = 商 × 除數 + 餘數。先算 商 × 除數', options: shuffle([`${q} × ${d}`, `${q} + ${d}`, `${q} - ${d}`, `${q} ÷ ${d}`]), ans: `${q} × ${d}` }, 
                     { type: 'MULTI', n1: q, n2: d, hint: '直式計算' }, 
                     { type: 'LOGIC', text: `除數是 ${d}，餘數 😊 最大只能是幾多？`, options: shuffle([`${maxRem}`, `${d}`, `${d+1}`, `${d-2}`]), ans: `${maxRem}` },
@@ -402,35 +436,57 @@
                     { type: 'INPUT_CHECK', label: `這個數的百位數字是？`, correct: hDigit.toString(), hint: '看最左邊的數字' }
                 ]}; })(),
 
-                (() => { const a=613, b=3; return { id: 15, title: '除法計算', text: `${a} ÷ ${b} = ?`, steps: [
-                    { type: 'LOGIC', text: `思考：600 ÷ 3 = 200。剩下的 13 ÷ 3 = ?`, options: shuffle(['4 ... 1', '4', '3 ... 4', '5']), ans: '4 ... 1' }, 
-                    { type: 'INPUT_CHECK', label: '組合起來，答案是？(輸入格式如 204...1)', correct: '204...1', hint: '中間用三個點點連接' }
+                // Q15: 有餘數除法 (全隨機)
+                (() => { 
+                    const b=rand(3,9), q=rand(100, 250), rem=rand(1, b-1); const a = b * q + rem;
+                    return { id: 15, title: '除法計算', text: `${a} ÷ ${b} = ?`, steps: [
+                    { type: 'LOGIC', text: `直式除法思考：${a} 除以 ${b}，商和餘數是多少？`, options: shuffle([`${q} ... ${rem}`, `${q}`, `${q-1} ... ${rem+b}`, `${q+1}`]), ans: `${q} ... ${rem}` }, 
+                    { type: 'INPUT_CHECK', label: '組合起來，答案是？(輸入格式如 204...1)', correct: `${q}...${rem}`, hint: '中間用三個點點連接' }
                 ]}; })(),
 
-                { id: 16, title: '單位換算與除法', text: '小明把長 2 米的絲帶，平均分成 4 段，每段長幾多厘米？', steps: [
-                    { type: 'LOGIC', text: '題目問「厘米」，但長度是「米」。先換算：2 米 = ? 厘米', options: shuffle(['200 厘米', '20 厘米', '2000 厘米', '2 厘米']), ans: '200 厘米' }, 
-                    { type: 'INPUT_CHECK', label: '平均分成 4 段，即 200 ÷ 4 = ?', correct: '50', hint: '心算 20 ÷ 4 再加 0' }
-                ]},
-
-                (() => { const pay=rand(900,950); return { id: 17, title: '日期與乘法', text: `王叔叔工作一天賺 $${pay}，他在一月十五日至十七日工作，共可賺幾多？`, steps: [
-                    { type: 'LOGIC', text: '「十五日至十七日」總共有幾天？', options: shuffle(['3天', '2天', '4天', '5天']), ans: '3天' }, 
-                    { type: 'MULTI', n1: pay, n2: 3, hint: '直式計算總工資' }
+                // Q16: 單位換算與除法 (隨機米數)
+                (() => { 
+                    const len = rand(2,8); const parts = [4, 5][rand(0,1)]; const cm = len * 100;
+                    return { id: 16, title: '單位換算與除法', text: `小明把長 ${len} 米的絲帶，平均分成 ${parts} 段，每段長幾多厘米？`, steps: [
+                    { type: 'LOGIC', text: `題目問「厘米」，但長度是「米」。先換算：${len} 米 = ? 厘米`, options: shuffle([`${cm} 厘米`, `${len*10} 厘米`, `${cm*10} 厘米`, `${len} 厘米`]), ans: `${cm} 厘米` }, 
+                    { type: 'INPUT_CHECK', label: `平均分成 ${parts} 段，即 ${cm} ÷ ${parts} = ?`, correct: (cm/parts).toString(), hint: '心算除法' }
                 ]}; })(),
 
-                (() => { const v1=500, v2=rand(200,400); return { id: 18, title: '容器總容量', text: '把容器 Q 倒滿兩個量杯。', isMultiBeaker: true, beakers: [{cap:500, lvl:v1, label:'量杯1'}, {cap:500, lvl:v2, label:'量杯2'}], steps: [
+                // Q17: 日期計算 (隨機日數與工資)
+                (() => { 
+                    const dates = [ { d1: '十五日', d2: '十七日', days: 3 }, { d1: '十日', d2: '十四日', days: 5 }, { d1: '二十日', d2: '二十三日', days: 4 }, { d1: '八日', d2: '十日', days: 3 } ];
+                    const dSet = dates[rand(0, dates.length-1)]; const pay=rand(800,980);
+                    return { id: 17, title: '日期與乘法', text: `王叔叔工作一天賺 $${pay}，他在一月${dSet.d1}至${dSet.d2}工作，共可賺幾多？`, steps: [
+                    { type: 'LOGIC', text: `「${dSet.d1}至${dSet.d2}」總共有幾天？（要連頭尾一起數）`, options: shuffle(['3天', '4天', '5天', '2天']), ans: `${dSet.days}天` }, 
+                    { type: 'MULTI', n1: pay, n2: dSet.days, hint: '直式計算總工資' }
+                ]}; })(),
+
+                // Q18: 容器總容量
+                (() => { const v1=rand(2,6)*100, v2=rand(1,4)*100; return { id: 18, title: '容器總容量', text: '把容器 Q 倒滿兩個量杯。', isMultiBeaker: true, beakers: [{cap:1000, lvl:v1, label:'量杯1'}, {cap:500, lvl:v2, label:'量杯2'}], steps: [
                     {type:'ADD', n1:v1, n2:v2, hint: '直式把兩個量杯的水量加起來'}
                 ]}; })(),
 
+                // Q19: 容量代入法
                 { id: 19, title: '容量代入法', text: '觀察圖中容量關係。', isCapacitySub: true, steps: [
                     {type:'LOGIC', text: 'Step 1: 既然 1 煲 = 2 瓶 + 2 杯，而 1 水壺 = 1 瓶 + 1 杯...', options: shuffle(['2 水壺 = 2 瓶 + 2 杯', '1 水壺 = 2 瓶 + 2 杯', '2 水壺 = 1 瓶 + 1 杯', '都錯']), ans: '2 水壺 = 2 瓶 + 2 杯'},
                     {type:'LOGIC', text: 'Step 2: 所以 1 煲剛好注滿多少個水壺？', options: shuffle(['2 個', '1 個', '3 個', '4 個']), ans: '2 個'}
                 ]},
 
-                { id: 20, title: '量杯比較', text: '細心觀察以上三個量杯，哪一項描述正確？', isThreeBeakers: true, steps: [
-                    {type:'LOGIC', text: '量杯 C (1L) 半滿，即是多少水？', options: shuffle(['500 mL', '1000 mL', '250 mL', '100 mL']), ans: '500 mL'},
-                    {type:'LOGIC', text: '對比三個量杯的水量，得出結論：', options: shuffle(['量杯 A 和 C 的水一樣多', '量杯 A 的水最多', '量杯 B 和 C 的水一樣多', '量杯 B 的水最多']), ans: '量杯 A 和 C 的水一樣多'}
-                ]},
+                // Q20: 量杯比較 (文字動態改變)
+                (() => {
+                    const variations = [
+                        {l: [{c:500, l:500, n:'A'}, {c:2000, l:200, n:'B'}, {c:1000, l:500, n:'C'}], q: '量杯 C (1L) 半滿，即是多少水？', a1: '500 mL', a2: '量杯 A 和 C 的水一樣多'},
+                        {l: [{c:1000, l:1000, n:'A'}, {c:2000, l:1000, n:'B'}, {c:500, l:500, n:'C'}], q: '量杯 B (2L) 半滿，即是多少水？', a1: '1000 mL', a2: '量杯 A 和 B 的水一樣多'},
+                        {l: [{c:2000, l:1000, n:'A'}, {c:500, l:500, n:'B'}, {c:1000, l:1000, n:'C'}], q: '量杯 A (2L) 半滿，即是多少水？', a1: '1000 mL', a2: '量杯 A 和 C 的水一樣多'}
+                    ];
+                    const set = variations[rand(0, variations.length-1)];
+                    return { id: 20, title: '量杯比較', text: '細心觀察以上三個量杯，哪一項描述正確？', isThreeBeakers: true, beakersData: set.l, steps: [
+                        {type:'LOGIC', text: set.q, options: shuffle(['500 mL', '1000 mL', '250 mL', '2000 mL']), ans: set.a1},
+                        {type:'LOGIC', text: '對比三個量杯的水量，得出結論：', options: shuffle(['量杯 A 和 C 的水一樣多', '量杯 A 的水最多', '量杯 B 和 C 的水一樣多', '量杯 A 和 B 的水一樣多']), ans: set.a2}
+                    ]};
+                })(),
                 
+                // Q21-Q22: 幾何
                 { id: 21, title: '幾何圖形特性', text: '以下哪項描述是正確的？', steps: [
                     { type: 'LOGIC', text: '所有平行四邊形都有甚麼特性？', options: shuffle(['對邊長度相等', '四邊長度都相等', '都是正方形', '有 3 個直角']), ans: '對邊長度相等' },
                     { type: 'LOGIC', text: '梯形有甚麼獨特的特徵？', options: shuffle(['只有一組對邊平行', '所有梯形都沒有直角', '有一對長度相等的對邊', '都是平行四邊形']), ans: '只有一組對邊平行' }
@@ -441,19 +497,22 @@
                     { type: 'INPUT_CHECK', label: '加上最大由4格拼成的那 1 個，總共可數出幾個？', correct: '9', hint: '4 + 4 + 1' }
                 ]},
 
+                // Q23: 象形圖
                 (() => {
                     let v1 = rand(2, 6), v2 = rand(3, 8); while(v2 === v1) v2 = rand(3, 8);
                     let v3 = rand(1, 5); while(v3 === v1 || v3 === v2) v3 = rand(1, 5);
-                    const data = [{name:'游泳班', value:6}, {name:'電腦班', value:4}, {name:'油畫班', value:8}, {name:'書法班', value:1}, {name:'舞蹈班', value:6}];
+                    const data = [{name:'游泳班', value:v1}, {name:'電腦班', value:v2}, {name:'油畫班', value:v3}];
+                    const diff = Math.abs(data[0].value - data[1].value);
+                    const maxName = data.reduce((p, c) => p.value > c.value ? p : c).name;
                     return { id: 23, title: '象形圖綜合分析', text: '這是 3E 班學生最喜歡的興趣班統計。', isPictogram: true, data: data, steps: [
-                        {type:'INPUT_CHECK', label: '3E 班學生共有多少人？', correct: '25', hint: '把它們全部加起來'},
-                        {type:'LOGIC', text: '哪一班只有一位學生選擇？', options: shuffle(['書法班', '電腦班', '游泳班', '舞蹈班']), ans: '書法班'},
-                        {type:'INPUT_CHECK', label: '選擇油畫班的人數是電腦班的幾多倍？', correct: '2', hint: '油畫班 8 人，電腦班 4 人'}
+                        {type:'LOGIC', text: `哪一項活動最受歡迎？`, options: shuffle([data[0].name, data[1].name, data[2].name, '不知道']), ans: maxName},
+                        {type:'INPUT_CHECK', label: `游泳和電腦班相差幾人？`, correct: diff.toString(), hint:'數一數兩個圖案相差多少個'}
                     ]};
                 })(),
 
+                // Q24: 終極三數比較題 (全隨機金額)
                 (() => {
-                    const dad=rand(2800,3200), mom=rand(2100,2400), diff=rand(150,250);
+                    const dad=rand(2500,3500), mom=rand(1500,2000), diff=rand(150,450);
                     const cousin = mom + diff; const finalAns = dad - cousin;
                     return { id: 24, title: '三數比較題 (終極拆解)', text: `爸爸有 $${dad}，媽媽有 $${mom}。媽媽比表姐少 $${diff}。問爸爸比表姐多幾元？`, steps: [
                         {type:'LOGIC', text: 'Step 1: 媽媽比表姐少，即表姐較多。綜合算式是？', options: shuffle([`${dad} - (${mom} + ${diff})`, `${dad} - ${mom} + ${diff}`, `(${dad} - ${mom}) - ${diff}`, `${dad} + ${mom} - ${diff}`]), ans: `${dad} - (${mom} + ${diff})`},
@@ -461,12 +520,10 @@
                         {type:'SUB', n1: dad, n2: cousin, hint: 'Step 3: 用爸爸的錢減去剛才算出的表姐的錢'},
                         {type:'INPUT_CHECK', label: 'Step 4: 填寫文字答句：爸爸比表姐多 _____ 元。', correct: finalAns.toString(), hint: '把剛才直式最後的答案填入句子中'}
                     ]};
-                })(),
-
-                { id: 25, title: '天平邏輯', text: '已知：1個罐 = 2個球。另外：1個瓜 = 1個罐 + 2個球。問：1個瓜等於多少個球？', steps: [{type:'LOGIC', text: '既然 1個罐 = 2個球，我們可以把「瓜」旁邊的「罐」換成什麼？', options: shuffle(['2個球', '1個球', '3個球', '不變']), ans: '2個球'}, {type:'LOGIC', text: '現在等式變成「1個瓜 = 2個球 + 2個球」。所以？', options: shuffle(['4個球', '3個球', '2個球', '5個球']), ans: '4個球'} ]}
+                })()
             ];
 
-            return shuffle(allQs).slice(0, 25);
+            return shuffle(allQs);
         };
 
         const App = () => {
@@ -606,12 +663,12 @@
                 <div className="min-h-screen flex flex-col items-center justify-center p-4">
                     <div className="bg-white rounded-[2.5rem] p-8 md:p-12 max-w-lg w-full shadow-2xl text-center border border-slate-100">
                         <div className="inline-block p-4 bg-indigo-100 rounded-full text-indigo-600 mb-6"><Icon.Brain/></div>
-                        <h1 className="text-3xl font-black text-slate-800 mb-2">Jasper 數學 V9.3</h1>
-                        <p className="text-indigo-500 font-bold mb-8 uppercase tracking-widest">排版與邏輯完美修復版</p>
+                        <h1 className="text-3xl font-black text-slate-800 mb-2">Jasper 數學 V9.4</h1>
+                        <p className="text-indigo-500 font-bold mb-8 uppercase tracking-widest">真題全隨機版</p>
                         <div className="text-left bg-slate-50 p-6 rounded-2xl mb-8 space-y-3 text-slate-600 font-bold text-sm">
-                            <p>✅ 修復貨幣換算負數 Bug</p>
-                            <p>✅ 修復 4位數乘法直式移位</p>
-                            <p>✅ 選擇題排版置中對齊</p>
+                            <p>🎲 全面隨機：數字、日期、水量次次不同</p>
+                            <p>🔥 難度升級：算柱推理、除法估算、單位換算</p>
+                            <p>✅ 修復固定答案問題，防背誦</p>
                         </div>
                         <button onClick={startQuiz} className="w-full bg-indigo-600 text-white text-xl font-black py-5 rounded-2xl shadow-xl hover:bg-indigo-700 active:scale-95 transition-all">開始特訓</button>
                     </div>
@@ -624,11 +681,11 @@
                         {devMode && (
                             <div className="mt-4 bg-white p-4 rounded-xl shadow border border-slate-200 max-w-lg mx-auto flex flex-wrap gap-2 justify-center animate-in zoom-in-95">
                                 <div className="w-full text-xs font-bold text-slate-500 mb-2">點擊即可直接測試該題型：</div>
-                                <button onClick={() => jumpToQuestion(10)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">乘法對齊測試 (Q10)</button>
-                                <button onClick={() => jumpToQuestion(6)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">貨幣防負數測試 (Q6)</button>
-                                <button onClick={() => jumpToQuestion(19)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">容量代入圖形測試 (Q19)</button>
-                                <button onClick={() => jumpToQuestion(20)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">三個量杯比較 (Q20)</button>
-                                <button onClick={() => jumpToQuestion(22)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">數平行四邊形 (Q22)</button>
+                                <button onClick={() => jumpToQuestion(8)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">隨機逆向代數 (Q8)</button>
+                                <button onClick={() => jumpToQuestion(13)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">隨機連續除法 (Q13)</button>
+                                <button onClick={() => jumpToQuestion(17)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">隨機日期 (Q17)</button>
+                                <button onClick={() => jumpToQuestion(20)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">隨機量杯比較 (Q20)</button>
+                                <button onClick={() => jumpToQuestion(24)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">隨機爸爸表姐 (Q24)</button>
                             </div>
                         )}
                     </div>
@@ -693,7 +750,7 @@
                             {/* 特殊圖形組件 */}
                             {currentQ.isBeaker && <BeakerView capacity={currentQ.cap} level={currentQ.lvl} label="量杯" />}
                             {currentQ.isMultiBeaker && <div className="flex justify-center flex-wrap">{currentQ.beakers.map((b,i)=><BeakerView key={i} capacity={b.cap} level={b.lvl} label={b.label} />)}</div>}
-                            {currentQ.isThreeBeakers && <ThreeBeakersView />}
+                            {currentQ.isThreeBeakers && <ThreeBeakersView labels={currentQ.beakersData} />}
                             {currentQ.isAbacus && <AbacusView number={currentQ.val} />}
                             {currentQ.isPictogram && <PictogramView data={currentQ.data} title="3E班興趣班統計" />}
                             {currentQ.isGrid && (
