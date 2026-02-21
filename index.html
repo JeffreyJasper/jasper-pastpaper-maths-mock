@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Jasper 數學模擬試卷 V8.5 (完美對齊版)</title>
+    <title>Jasper 數學模擬試卷 V8.6 (視覺不干擾版)</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -27,8 +27,14 @@
         .op-select { appearance: none; text-align: center; cursor: pointer; outline: none; transition: all 0.2s; }
         .op-select:hover { transform: scale(1.05); }
 
-        @keyframes popUp { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
-        .praise-anim { animation: popUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        /* 全新：頂部滑落的鼓勵動畫 (不會遮擋題目) */
+        @keyframes slideDownFade { 
+            0% { transform: translate(-50%, -100%); opacity: 0; } 
+            15% { transform: translate(-50%, 0); opacity: 1; } 
+            80% { transform: translate(-50%, 0); opacity: 1; } 
+            100% { transform: translate(-50%, -100%); opacity: 0; } 
+        }
+        .toast-anim { animation: slideDownFade 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
     </style>
 </head>
 <body>
@@ -42,10 +48,11 @@
             Check: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>,
             Brain: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg>,
             Idea: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.9 1.2 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>,
-            FastForward: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 19 22 12 13 5 13 19"/><polygon points="2 19 11 12 2 5 2 19"/></svg>
+            FastForward: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 19 22 12 13 5 13 19"/><polygon points="2 19 11 12 2 5 2 19"/></svg>,
+            Star: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
         };
 
-        const PRAISE_WORDS = ["太棒了！", "Jasper 好野！", "完全正確！", "做得好！", "數學天才！", "繼續加油！"];
+        const PRAISE_WORDS = ["太棒了！", "Jasper 好野！", "完全正確！", "做得好！", "思路正確！", "繼續加油！"];
 
         // --- 視覺組件：量杯 ---
         const BeakerView = ({ capacity = 1000, level, label }) => {
@@ -118,7 +125,7 @@
             );
         };
 
-        // --- 直式組件 (已修復對齊) ---
+        // --- 直式組件 ---
         const VerticalAddSub = ({ n1, n2, op, onComplete }) => {
             const digits1 = n1.toString().padStart(4, ' ').split('');
             const digits2 = n2.toString().padStart(4, ' ').split('');
@@ -210,9 +217,8 @@
         };
 
         const VerticalMulti = ({ n1, n2, onComplete }) => {
-            const digits1 = n1.toString().padStart(3, ' ').split(''); // 最大 3 位數
-            const [inputs, setInputs] = useState(['', '', '', '']); // 結果 4 位數
-            const [carries, setCarries] = useState(['', '', '']);
+            const digits1 = n1.toString().padStart(3, ' ').split('');
+            const [inputs, setInputs] = useState(['', '', '', '']); const [carries, setCarries] = useState(['', '', '']);
             const [userOp, setUserOp] = useState('?');
             const [errorMsg, setErrorMsg] = useState('');
             const correctAns = n1 * n2;
@@ -228,27 +234,17 @@
             return (
                 <div className="bg-white p-6 rounded-2xl border-2 border-slate-200 shadow-sm max-w-sm mx-auto animate-in zoom-in-95">
                     <div className="grid grid-cols-5 gap-2 font-mono">
-                        {/* Row 1: 進位格，放在數字 1 的正上方 */}
-                        <div className="col-span-2"></div>
-                        {carries.map((v, i) => <input key={`c-${i}`} className="carry-input" placeholder="進" value={v} onChange={e=>setCarries(p=>{const n=[...p];n[i]=e.target.value.slice(-1);return n;})} />)}
+                        <div className="col-span-2"></div>{carries.map((v, i) => <input key={`c-${i}`} className="carry-input" placeholder="進" value={v} onChange={e=>setCarries(p=>{const n=[...p];n[i]=e.target.value.slice(-1);return n;})} />)}
+                        <div className="col-span-2"></div>{digits1.map((d, i) => <div key={`d1-${i}`} className="h-10 flex items-center justify-center text-3xl font-black text-slate-700">{d}</div>)}
                         
-                        {/* Row 2: 數字 1 (3 digits) */}
-                        <div className="col-span-2"></div>
-                        {digits1.map((d, i) => <div key={`d1-${i}`} className="h-10 flex items-center justify-center text-3xl font-black text-slate-700">{d}</div>)}
-                        
-                        {/* Row 3: 符號 與 數字 2。修復對齊 Bug：加入 col-span-3 推位 */}
                         <select value={userOp} onChange={e=>{setUserOp(e.target.value); setErrorMsg('');}} className="op-select col-span-1 text-3xl font-black text-blue-600 bg-blue-50 border-2 border-blue-200 rounded-lg">
                             <option value="?">?</option><option value="+">+</option><option value="-">-</option><option value="×">×</option>
                         </select>
-                        <div className="col-span-3"></div> {/* 這裡用 3 格空白把乘數推到最右邊個位 */}
+                        <div className="col-span-3"></div>
                         <div className="col-span-1 h-10 flex items-center justify-center text-3xl font-black text-slate-700">{n2}</div>
                         
-                        {/* Row 4: 橫線 */}
                         <div className="col-span-5 calc-line"></div>
-                        
-                        {/* Row 5: 答案格 (4 digits) */}
-                        <div className="col-span-1"></div>
-                        {inputs.map((v, i) => <input key={`in-${i}`} type="number" className={`digit-input h-14 ${v!=='' && correctDigits[i]!==' ' && v!==correctDigits[i] ? 'bg-red-50 border-red-300 text-red-600' : ''}`} value={v} disabled={correctDigits[i]===' '} placeholder={correctDigits[i]===' '?'':'?'} onChange={e => {setInputs(p=>{const n=[...p];n[i]=e.target.value.slice(-1);return n;}); setErrorMsg('');}} />)}
+                        <div className="col-span-1"></div>{inputs.map((v, i) => <input key={`in-${i}`} type="number" className={`digit-input h-14 ${v!=='' && correctDigits[i]!==' ' && v!==correctDigits[i] ? 'bg-red-50 border-red-300 text-red-600' : ''}`} value={v} disabled={correctDigits[i]===' '} placeholder={correctDigits[i]===' '?'':'?'} onChange={e => {setInputs(p=>{const n=[...p];n[i]=e.target.value.slice(-1);return n;}); setErrorMsg('');}} />)}
                     </div>
                     {errorMsg && <div className="mt-3 text-center text-rose-500 font-bold text-sm bg-rose-50 p-2 rounded">{errorMsg}</div>}
                     <button onClick={checkAnswer} className="mt-5 w-full bg-indigo-600 text-white py-3 rounded-xl font-black shadow-md active:scale-95 transition-all hover:bg-indigo-700">檢查答案</button>
@@ -284,7 +280,7 @@
             );
         };
 
-        // --- 核心功能：生成器 (修復象形圖 Bug) ---
+        // --- 核心功能：24 題生成器 ---
         const generateQuizData = () => {
             const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
             const shuffle = (arr) => arr.sort(() => Math.random() - 0.5);
@@ -311,14 +307,9 @@
                 (() => { const n = rand(10000, 90000); return { id: 12, title: '讀取算柱', text: '請讀出算柱上的五位數。', isAbacus: true, val: n, steps: [{type:'INPUT_CHECK', label: '這個數是？', correct: n.toString(), hint: '看清楚每一條柱上有幾粒珠'}] }; })(),
                 (() => { const c=1000; const l=[250, 500, 750][rand(0,2)]; return { id: 13, title: '讀取容量', text: '量杯中的水有多少？', isBeaker: true, cap: c, lvl: l, steps: [{type:'INPUT_CHECK', label: '水位是(mL)？', correct: l.toString(), hint: '留意數字旁邊的刻度線'}] }; })(),
                 
-                // 修復 14 象形圖 Bug: 強制確保三個數值絕不相同
                 (() => {
-                    let v1 = rand(2, 6);
-                    let v2 = rand(3, 8);
-                    while(v2 === v1) v2 = rand(3, 8);
-                    let v3 = rand(1, 5);
-                    while(v3 === v1 || v3 === v2) v3 = rand(1, 5);
-
+                    let v1 = rand(2, 6), v2 = rand(3, 8); while(v2 === v1) v2 = rand(3, 8);
+                    let v3 = rand(1, 5); while(v3 === v1 || v3 === v2) v3 = rand(1, 5);
                     const data = [{name:'游泳', value:v1}, {name:'繪畫', value:v2}, {name:'跳舞', value:v3}];
                     const diff = Math.abs(data[0].value - data[1].value);
                     const maxName = data.reduce((p, c) => p.value > c.value ? p : c).name;
@@ -505,27 +496,28 @@
                 <div className="min-h-screen flex flex-col items-center justify-center p-4">
                     <div className="bg-white rounded-[2.5rem] p-8 md:p-12 max-w-lg w-full shadow-2xl text-center border border-slate-100">
                         <div className="inline-block p-4 bg-indigo-100 rounded-full text-indigo-600 mb-6"><Icon.Brain/></div>
-                        <h1 className="text-3xl font-black text-slate-800 mb-2">Jasper 數學 V8.5</h1>
-                        <p className="text-indigo-500 font-bold mb-8 uppercase tracking-widest">排版與象形圖完美修復版</p>
+                        <h1 className="text-3xl font-black text-slate-800 mb-2">Jasper 數學 V8.6</h1>
+                        <p className="text-indigo-500 font-bold mb-8 uppercase tracking-widest">視覺不干擾版</p>
                         <div className="text-left bg-slate-50 p-6 rounded-2xl mb-8 space-y-3 text-slate-600 font-bold text-sm">
+                            <p>🌟 全新「遊戲成就式」滑落鼓勵，不阻擋視線</p>
                             <p>✅ 修復乘法直式未對齊問題</p>
-                            <p>✅ 修復象形圖數量重複的問題</p>
-                            <p>✅ 保留隨機出題與家長測試</p>
+                            <p>✅ 修正象形圖雙胞胎 Bug</p>
                         </div>
                         <button onClick={startQuiz} className="w-full bg-indigo-600 text-white text-xl font-black py-5 rounded-2xl shadow-xl hover:bg-indigo-700 active:scale-95 transition-all">正常開始特訓</button>
                     </div>
                     
                     {/* 家長測試面板開關 */}
                     <div className="mt-8 text-center">
-                        <button onClick={() => setDevMode(!devMode)} className="text-xs text-slate-400 font-bold hover:text-slate-600">
+                        <button onClick={() => setDevMode(!devMode)} className="text-xs text-slate-400 font-bold hover:text-slate-600 transition-all">
                             ⚙️ {devMode ? '隱藏' : '顯示'}家長測試面板
                         </button>
                         {devMode && (
-                            <div className="mt-4 bg-white p-4 rounded-xl shadow border border-slate-200 max-w-lg mx-auto flex flex-wrap gap-2 justify-center">
+                            <div className="mt-4 bg-white p-4 rounded-xl shadow border border-slate-200 max-w-lg mx-auto flex flex-wrap gap-2 justify-center animate-in zoom-in-95">
                                 <div className="w-full text-xs font-bold text-slate-500 mb-2">點擊即可直接測試該題型：</div>
-                                <button onClick={() => jumpToQuestion(16)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">乘法直式對齊測試 (Q16)</button>
-                                <button onClick={() => jumpToQuestion(14)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">象形圖不重複測試 (Q14)</button>
+                                <button onClick={() => jumpToQuestion(16)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">乘法對齊測試 (Q16)</button>
+                                <button onClick={() => jumpToQuestion(14)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">象形圖測試 (Q14)</button>
                                 <button onClick={() => jumpToQuestion(24)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">爸爸表姐題 (Q24)</button>
+                                <button onClick={() => jumpToQuestion(1)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">中文字題 (Q1)</button>
                             </div>
                         )}
                     </div>
@@ -560,13 +552,20 @@
 
             return (
                 <div className="min-h-screen p-4 md:p-8 max-w-2xl mx-auto relative overflow-hidden">
-                    {praise && <div className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none"><div className="praise-anim bg-yellow-400 text-yellow-900 px-8 py-4 rounded-3xl text-4xl font-black shadow-2xl border-4 border-white transform rotate-[-5deg]">{praise}</div></div>}
+                    {/* 全新：頂部滑落的 Toast 鼓勵動畫 */}
+                    {praise && (
+                        <div className="fixed top-12 left-1/2 z-50 pointer-events-none toast-anim">
+                            <div className="bg-emerald-500 text-white px-8 py-3 rounded-full text-2xl font-black shadow-2xl border-4 border-white flex items-center gap-3">
+                                <Icon.Star /> {praise}
+                            </div>
+                        </div>
+                    )}
                     
                     <div className="flex justify-between items-center mb-6">
                         <div className="flex items-center gap-3 px-5 py-3 bg-white rounded-2xl font-bold text-slate-600 shadow-sm border border-slate-100"><span>Q {qIndex + 1} / {questions.length}</span></div>
                         <div className="flex items-center gap-2">
                             {devMode && (
-                                <button onClick={forceSkipQuestion} className="flex items-center gap-1 px-3 py-2 bg-slate-800 text-white rounded-xl font-bold text-xs shadow-sm hover:bg-slate-700 active:scale-95">
+                                <button onClick={forceSkipQuestion} className="flex items-center gap-1 px-3 py-2 bg-slate-800 text-white rounded-xl font-bold text-xs shadow-sm hover:bg-slate-700 active:scale-95 transition-all">
                                     <Icon.FastForward /> 跳過
                                 </button>
                             )}
