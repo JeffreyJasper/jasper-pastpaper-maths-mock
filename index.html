@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Jasper 數學模擬試卷 V9.6 (象形圖修復版)</title>
+    <title>Jasper 數學模擬試卷 V9.6 (邏輯啟發與全隨機版)</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -44,7 +44,7 @@
             FastForward: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 19 22 12 13 5 13 19"/><polygon points="2 19 11 12 2 5 2 19"/></svg>
         };
 
-        const PRAISE_WORDS = ["太棒了！", "Jasper 好野！", "完全正確！", "做得好！", "數學天才！", "思路清晰！"];
+        const PRAISE_WORDS = ["太棒了！", "Jasper 好野！", "完全正確！", "做得好！", "思路正確！", "繼續加油！"];
 
         // --- 視覺組件 ---
         const BeakerView = ({ capacity = 1000, level, label }) => {
@@ -64,7 +64,7 @@
                         <line x1="100" y1="20" x2="120" y2="20" stroke="#1e293b" strokeWidth="3"/>
                         {capacity > 100 ? null : <text x="95" y="24" fontSize="16" fontWeight="bold" textAnchor="end" fill="#475569">{capacity}</text>}
                     </svg>
-                    <div className="mt-2 font-bold text-slate-700 bg-white px-2 py-1 rounded shadow-sm text-sm">{label} (容積:{capacity >= 1000 ? capacity/1000+'L' : capacity+'mL'})</div>
+                    <div className="mt-2 font-bold text-slate-700 bg-white px-2 py-1 rounded shadow-sm text-sm border border-slate-200">{label}<br/><span className="text-xs text-slate-400">容積:{capacity >= 1000 ? capacity/1000+'L' : capacity+'mL'}</span></div>
                 </div>
             );
         };
@@ -88,18 +88,18 @@
             return (
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-6 my-4">
                     <div className="flex items-center justify-center gap-4">
-                        <div className="flex items-center gap-1"><Pot /></div>
+                        <div className="flex items-center gap-1 bg-amber-50 px-2 py-1 rounded"><Pot /></div>
                         <div className="font-black text-2xl text-slate-400">=</div>
-                        <div className="flex items-center gap-1"><Bottle /><Bottle /></div>
+                        <div className="flex items-center gap-1 bg-blue-50 px-2 py-1 rounded"><Bottle /><Bottle /></div>
                         <div className="font-black text-2xl text-slate-400">+</div>
-                        <div className="flex items-center gap-1"><Cup /><Cup /></div>
+                        <div className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded"><Cup /><Cup /></div>
                     </div>
                     <div className="flex items-center justify-center gap-4">
-                        <div className="flex items-center gap-1 font-black text-lg bg-slate-100 px-3 py-1 rounded">1 個水壺</div>
+                        <div className="flex items-center gap-1 font-black text-lg bg-indigo-100 text-indigo-800 px-3 py-2 rounded">1 個水壺</div>
                         <div className="font-black text-2xl text-slate-400">=</div>
-                        <div className="flex items-center gap-1"><Bottle /></div>
+                        <div className="flex items-center gap-1 bg-blue-50 px-2 py-1 rounded"><Bottle /></div>
                         <div className="font-black text-2xl text-slate-400">+</div>
-                        <div className="flex items-center gap-1"><Cup /></div>
+                        <div className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded"><Cup /></div>
                     </div>
                 </div>
             );
@@ -171,7 +171,7 @@
                 <div className="bg-white p-6 rounded-2xl border-2 border-slate-200 shadow-sm max-w-sm mx-auto animate-in zoom-in-95">
                     <div className="grid grid-cols-5 gap-1 font-mono">
                         <div className="col-span-1"></div>{digits1.map((d, i) => <div key={`d1-${i}`} className="h-10 flex items-center justify-center text-3xl font-black text-slate-700">{d}</div>)}
-                        <select value={userOp} onChange={e=>{setUserOp(e.target.value); setErrorMsg('');}} className="op-select col-span-1 text-3xl font-black text-blue-600 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                        <select value={userOp} onChange={e=>{setUserOp(e.target.value); setErrorMsg('');}} className="op-select col-span-1 text-3xl font-black text-blue-600 bg-blue-50 border-2 border-blue-200 rounded-lg outline-none">
                             <option value="?">?</option><option value="+">+</option><option value="-">-</option><option value="×">×</option>
                         </select>
                         {digits2.map((d, i) => <div key={`d2-${i}`} className="h-10 flex items-center justify-center text-3xl font-black text-slate-700">{d}</div>)}
@@ -213,14 +213,14 @@
                 <div className="bg-white p-6 rounded-2xl border-2 border-slate-200 shadow-sm max-w-sm mx-auto animate-in zoom-in-95">
                     <div className="grid grid-cols-5 gap-1 font-mono items-center">
                         <div className="col-span-1"></div>{digits1.map((d, i) => <div key={`d1-${i}`} className="h-8 flex items-center justify-center text-2xl font-black text-slate-700">{d}</div>)}
-                        <select value={userOp1} onChange={e=>{setUserOp1(e.target.value); setErrorMsg('');}} className="op-select col-span-1 text-2xl font-black text-blue-600 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                        <select value={userOp1} onChange={e=>{setUserOp1(e.target.value); setErrorMsg('');}} className="op-select col-span-1 text-2xl font-black text-blue-600 bg-blue-50 border-2 border-blue-200 rounded-lg outline-none">
                             <option value="?">?</option><option value="+">+</option><option value="-">-</option>
                         </select>
                         {digits2.map((d, i) => <div key={`d2-${i}`} className="h-8 flex items-center justify-center text-2xl font-black text-slate-700">{d}</div>)}
                         <div className="col-span-1"></div>{carries1.map((v, i) => <div key={`c1-${i}`} className="flex items-end justify-center"><input className="carry-input" value={v} placeholder="." onChange={e=>setCarries1(p=>{const n=[...p];n[i]=e.target.value.slice(-2);return n;})} /></div>)}
                         <div className="col-span-5 calc-line"></div>
                         <div className="col-span-1"></div>{inputs1.map((v, i) => <input key={`in1-${i}`} type="number" className={`digit-input h-10 ${v!=='' && digitsStep1[i]!==' ' && v!==digitsStep1[i] ? 'bg-red-50 border-red-300' : ''}`} value={v} disabled={digitsStep1[i]===' '} onChange={e => {setInputs1(p=>{const n=[...p];n[i]=e.target.value.slice(-1);return n;}); setErrorMsg('');}} />)}
-                        <select value={userOp2} onChange={e=>{setUserOp2(e.target.value); setErrorMsg('');}} className="op-select col-span-1 text-2xl font-black text-blue-600 bg-blue-50 border-2 border-blue-200 rounded-lg mt-2">
+                        <select value={userOp2} onChange={e=>{setUserOp2(e.target.value); setErrorMsg('');}} className="op-select col-span-1 text-2xl font-black text-blue-600 bg-blue-50 border-2 border-blue-200 rounded-lg mt-2 outline-none">
                             <option value="?">?</option><option value="+">+</option><option value="-">-</option>
                         </select>
                         {digits3.map((d, i) => <div key={`d3-${i}`} className="h-8 flex items-center justify-center text-2xl font-black text-slate-700 mt-2">{d}</div>)}
@@ -262,7 +262,7 @@
                         <div style={{gridColumn: `span ${gridCols - digits1.length}`}}></div>
                         {digits1.map((d, i) => <div key={`d1-${i}`} className="h-10 flex items-center justify-center text-3xl font-black text-slate-700">{d}</div>)}
                         
-                        <select value={userOp} onChange={e=>{setUserOp(e.target.value); setErrorMsg('');}} className="op-select text-3xl font-black text-blue-600 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                        <select value={userOp} onChange={e=>{setUserOp(e.target.value); setErrorMsg('');}} className="op-select text-3xl font-black text-blue-600 bg-blue-50 border-2 border-blue-200 rounded-lg outline-none">
                             <option value="?">?</option><option value="+">+</option><option value="-">-</option><option value="×">×</option>
                         </select>
                         <div style={{gridColumn: `span ${gridCols - 2}`}}></div>
@@ -307,7 +307,7 @@
             );
         };
 
-        // --- 核心功能：真題隨機生成器 ---
+        // --- 核心功能：真題全隨機生成器 ---
         const generateQuizData = () => {
             const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
             const shuffle = (arr) => arr.sort(() => Math.random() - 0.5);
@@ -319,8 +319,7 @@
                         {n: 54047, c: '五萬四千零四十七'}, {n: 30205, c: '三萬零二百零五'}, 
                         {n: 80016, c: '八萬零一十六'}, {n: 12003, c: '一萬二千零三'}, 
                         {n: 40500, c: '四萬零五百'}, {n: 60302, c: '六萬零三百零二'},
-                        {n: 90001, c: '九萬零一'}, {n: 24050, c: '二萬四千零五十'},
-                        {n: 70108, c: '七萬零一百零八'}, {n: 10010, c: '一萬零一十'}
+                        {n: 90001, c: '九萬零一'}, {n: 24050, c: '二萬四千零五十'}
                     ];
                     const pair = numMap[rand(0, numMap.length - 1)];
                     return { id: 1, title: '數字讀法', text: `「${pair.n}」讀作什麼？`, steps: [{ type: 'TEXT_INPUT', label: '請用中文字寫出讀法', correct: pair.c, hint: '注意「零」的寫法，不要打錯字喔！' }] }; 
@@ -352,9 +351,9 @@
                 (() => { const a=rand(6000,9000), b=rand(1000,5000); return { id: 4, title: '四位數減法', text: `${a} - ${b} = ?`, steps: [{ type: 'LOGIC', text: '這是一條純減法。', options: shuffle(['開始計算', '心算', '直接寫答案', '放棄']), ans: '開始計算' }, { type: 'SUB', n1: a, n2: b, hint: '小心借位' }]}; })(),
                 (() => { const a=rand(1000,4000), b=rand(2000,5000); return { id: 5, title: '四位數加法', text: `${a} + ${b} = ?`, steps: [{ type: 'LOGIC', text: '這是一條純加法。', options: shuffle(['開始計算', '心算', '直接寫答案', '放棄']), ans: '開始計算' }, { type: 'ADD', n1: a, n2: b, hint: '要小心連續進位' }]}; })(),
                 
-                // Q6: 貨幣與括號 (修復負數 Bug)
+                // Q6: 貨幣與括號 (確保 A 元 > (B+C) 元)
                 (() => { 
-                    const dA=rand(20,60), dB=rand(2,8), cB=rand(1,9), dC=rand(10,20), cC=rand(1,9); 
+                    const dA=rand(30,60), dB=rand(2,8), cB=rand(1,9), dC=rand(10,20), cC=rand(1,9); 
                     const v1 = dB*10 + cB; const v2 = dC*10 + cC; 
                     const safe_dA = Math.max(dA, Math.ceil((v1+v2)/10) + rand(2, 5));
                     const total = safe_dA * 10; 
@@ -460,18 +459,24 @@
                     { type: 'MULTI', n1: pay, n2: dSet.days, hint: '直式計算總工資' }
                 ]}; })(),
 
-                // Q18: 容器總容量
-                (() => { const v1=rand(2,6)*100, v2=rand(1,4)*100; return { id: 18, title: '容器總容量', text: '把容器 Q 倒滿兩個量杯。', isMultiBeaker: true, beakers: [{cap:1000, lvl:v1, label:'量杯1'}, {cap:500, lvl:v2, label:'量杯2'}], steps: [
-                    {type:'ADD', n1:v1, n2:v2, hint: '直式把兩個量杯的水量加起來'}
-                ]}; })(),
+                // Q18: 容器總容量 (先輸入讀數才加)
+                (() => { 
+                    const v1=[200, 400, 600, 800][rand(0,3)], v2=[100, 200, 300, 400][rand(0,3)]; 
+                    return { id: 18, title: '容器總容量', text: '把容器 Q 的水全部倒進以下兩個量杯。請問容器 Q 原本有多少水？', isMultiBeaker: true, beakers: [{cap:1000, lvl:v1, label:'量杯1'}, {cap:500, lvl:v2, label:'量杯2'}], steps: [
+                        {type:'INPUT_CHECK', label: '請先讀出量杯 1 的水量 (mL)', correct: v1.toString(), hint: '看清楚藍色水面指著哪個數字'},
+                        {type:'INPUT_CHECK', label: '請讀出量杯 2 的水量 (mL)', correct: v2.toString(), hint: '看清楚藍色水面指著哪個數字'},
+                        {type:'LOGIC', text: '要求容器 Q 的總容量，應該把兩杯水...', options: shuffle(['加起來', '相減', '相乘', '相除']), ans: '加起來'},
+                        {type:'ADD', n1:v1, n2:v2, hint: '用直式把兩杯水量加起來'}
+                    ]}; 
+                })(),
 
-                // Q19: 容量代入法
-                { id: 19, title: '容量代入法', text: '觀察圖中容量關係。', isCapacitySub: true, steps: [
-                    {type:'LOGIC', text: 'Step 1: 既然 1 煲 = 2 瓶 + 2 杯，而 1 水壺 = 1 瓶 + 1 杯...', options: shuffle(['2 水壺 = 2 瓶 + 2 杯', '1 水壺 = 2 瓶 + 2 杯', '2 水壺 = 1 瓶 + 1 杯', '都錯']), ans: '2 水壺 = 2 瓶 + 2 杯'},
-                    {type:'LOGIC', text: 'Step 2: 所以 1 煲剛好注滿多少個水壺？', options: shuffle(['2 個', '1 個', '3 個', '4 個']), ans: '2 個'}
+                // Q19: 容量代入法 (引導邏輯)
+                { id: 19, title: '代數與邏輯', text: '圖中顯示了三個容器的容量關係。', isCapacitySub: true, steps: [
+                    {type:'LOGIC', text: '觀察第二個圖：1 個水壺 = 1 個水樽 + 1 隻杯。那麼，如果要 2 個水壺，等於需要什麼？', options: shuffle(['2 個水樽 + 2 隻杯', '1 個水樽 + 1 隻杯', '3 個水樽 + 3 隻杯', '只有 2 個水樽']), ans: '2 個水樽 + 2 隻杯'},
+                    {type:'LOGIC', text: '觀察第一個圖：1 個大煲 = 2 個水樽 + 2 隻杯。\n結合剛才的發現，1 個大煲可以換成幾多個水壺？', options: shuffle(['2 個水壺', '1 個水壺', '3 個水壺', '4 個水壺']), ans: '2 個水壺'}
                 ]},
 
-                // Q20: 量杯比較 (已修復圖形不對齊與數據 Bug)
+                // Q20: 量杯比較
                 (() => {
                     const variations = [
                         {l: [{c:500, l:500, n:'A'}, {c:2000, l:200, n:'B'}, {c:1000, l:500, n:'C'}], q: '量杯 C (1L) 半滿，即是多少水？', a1: '500 mL', a2: '量杯 A 和 C 的水一樣多'},
@@ -481,7 +486,7 @@
                     const set = variations[rand(0, variations.length-1)];
                     return { id: 20, title: '量杯比較', text: '細心觀察以上三個量杯，哪一項描述正確？', isThreeBeakers: true, beakersData: set.l, steps: [
                         {type:'LOGIC', text: set.q, options: shuffle(['500 mL', '1000 mL', '250 mL', '2000 mL']), ans: set.a1},
-                        {type:'LOGIC', text: '對比三個量杯的水量，得出結論：', options: shuffle(['量杯 A 和 C 的水一樣多', '量杯 A 的水最多', '量杯 B 和 C 的水一樣多', '量杯 A 和 B 的水一樣多']), ans: set.a2}
+                        {type:'LOGIC', text: '對比三個量杯的水量，得出結論：', options: shuffle(['量杯 A 和 C 的水一樣多', '量杯 A 的水最多', '量杯 B 和 C 的水一樣多', '量杯 B 的水最多']), ans: set.a2}
                     ]};
                 })(),
                 
@@ -491,7 +496,7 @@
                     { type: 'LOGIC', text: '梯形有甚麼獨特的特徵？', options: shuffle(['只有一組對邊平行', '所有梯形都沒有直角', '有一對長度相等的對邊', '都是平行四邊形']), ans: '只有一組對邊平行' }
                 ]},
                 
-                // Q22: 數平行四邊形 (已修復圖形與選項對齊)
+                // Q22: 數平行四邊形
                 { id: 22, title: '數平行四邊形', text: '右圖是一個呈「田」字的斜向圖形。', isGrid: true, steps: [
                     { type: 'LOGIC', text: '圖中共有多少個「最小」的平行四邊形 (1格)？', options: shuffle(['4 個', '2 個', '8 個', '1 個']), ans: '4 個' },
                     { type: 'LOGIC', text: '由 2 個小格拼成的平行四邊形 (橫向2個+直向2個) 有幾個？', options: shuffle(['4 個', '2 個', '6 個', '0 個']), ans: '4 個' },
@@ -525,7 +530,7 @@
 
                 // Q24: 三數比較題
                 (() => {
-                    const dad=rand(2800,3200), mom=rand(2100,2400), diff=rand(150,250);
+                    const dad=rand(2500,3500), mom=rand(1500,2000), diff=rand(150,450);
                     const cousin = mom + diff; const finalAns = dad - cousin;
                     return { id: 24, title: '三數比較題 (終極拆解)', text: `爸爸有 $${dad}，媽媽有 $${mom}。媽媽比表姐少 $${diff}。問爸爸比表姐多幾元？`, steps: [
                         {type:'LOGIC', text: 'Step 1: 媽媽比表姐少，即表姐較多。綜合算式是？', options: shuffle([`${dad} - (${mom} + ${diff})`, `${dad} - ${mom} + ${diff}`, `(${dad} - ${mom}) - ${diff}`, `${dad} + ${mom} - ${diff}`]), ans: `${dad} - (${mom} + ${diff})`},
@@ -644,13 +649,13 @@
             const renderHint = (hintText) => {
                 if (!hintText) return null;
                 return (
-                    <div className="mb-4 text-center h-12 flex items-center justify-center w-full">
+                    <div className="mb-4 text-center h-12 flex items-center justify-center">
                         {!showHint ? (
-                            <button onClick={() => setShowHint(true)} className="flex items-center justify-center gap-2 bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 px-5 py-2 rounded-full font-bold text-sm transition-all active:scale-95 shadow-sm mx-auto">
+                            <button onClick={() => setShowHint(true)} className="flex items-center gap-2 bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 px-5 py-2 rounded-full font-bold text-sm transition-all active:scale-95 shadow-sm">
                                 <Icon.Idea /> 點擊顯示提示
                             </button>
                         ) : (
-                            <div className="animate-in zoom-in-95 bg-yellow-50 border border-yellow-200 text-yellow-800 px-5 py-2 rounded-full font-bold text-sm flex items-center justify-center gap-2 shadow-sm mx-auto w-fit">
+                            <div className="animate-in zoom-in-95 bg-yellow-50 border border-yellow-200 text-yellow-800 px-5 py-2 rounded-full font-bold text-sm flex items-center gap-2 shadow-sm">
                                 <Icon.Idea /> 提示：{hintText}
                             </div>
                         )}
@@ -661,7 +666,7 @@
             const renderStep = () => {
                 const stepKey = `${qIndex}-${stepIndex}`; 
                 switch(currentStep.type) {
-                    case 'LOGIC': return <div key={stepKey} className="flex flex-col gap-3 animate-in slide-in-from-right w-full max-w-md mx-auto"><div className="bg-indigo-50 p-4 rounded-xl text-indigo-800 font-bold flex gap-2"><Icon.Brain/> {currentStep.text}</div>{currentStep.options.map((o, i) => <button key={i} onClick={() => handleLogicChoice(o)} className="p-4 border-2 border-slate-200 rounded-xl font-bold hover:bg-indigo-100 hover:border-indigo-400 text-center transition-colors break-words whitespace-pre-wrap">{o}</button>)}</div>;
+                    case 'LOGIC': return <div key={stepKey} className="grid gap-4 animate-in slide-in-from-right flex-1 w-full max-w-md mx-auto"><div className="bg-indigo-50 p-4 rounded-xl text-indigo-800 font-bold flex gap-2"><Icon.Brain/> {currentStep.text}</div>{currentStep.options.map((o, i) => <button key={i} onClick={() => handleLogicChoice(o)} className="p-4 border-2 border-slate-200 rounded-xl font-bold hover:bg-indigo-100 hover:border-indigo-400 flex items-center justify-center text-center transition-colors">{o}</button>)}</div>;
                     case 'ADD': case 'SUB': return <div key={stepKey} className="animate-in zoom-in-95 w-full flex flex-col items-center">{renderHint(currentStep.hint)}<VerticalAddSub n1={currentStep.n1} n2={currentStep.n2} op={currentStep.type==='ADD'?'+':'-'} onComplete={handleCalcComplete} /></div>;
                     case 'MULTI': return <div key={stepKey} className="animate-in zoom-in-95 w-full flex flex-col items-center">{renderHint(currentStep.hint)}<VerticalMulti n1={currentStep.n1} n2={currentStep.n2} onComplete={handleCalcComplete} /></div>;
                     case 'CONTINUOUS': return <div key={stepKey} className="animate-in zoom-in-95 w-full flex flex-col items-center">{renderHint(currentStep.hint)}<VerticalContinuous n1={currentStep.n1} n2={currentStep.n2} n3={currentStep.n3} op1={currentStep.op1} op2={currentStep.op2} onComplete={handleCalcComplete} /></div>;
@@ -676,12 +681,12 @@
                 <div className="min-h-screen flex flex-col items-center justify-center p-4">
                     <div className="bg-white rounded-[2.5rem] p-8 md:p-12 max-w-lg w-full shadow-2xl text-center border border-slate-100">
                         <div className="inline-block p-4 bg-indigo-100 rounded-full text-indigo-600 mb-6"><Icon.Brain/></div>
-                        <h1 className="text-3xl font-black text-slate-800 mb-2">Jasper 數學 V9.3</h1>
-                        <p className="text-indigo-500 font-bold mb-8 uppercase tracking-widest">修正算術與排版</p>
+                        <h1 className="text-3xl font-black text-slate-800 mb-2">Jasper 數學 V9.6</h1>
+                        <p className="text-indigo-500 font-bold mb-8 uppercase tracking-widest">邏輯啟發與全隨機版</p>
                         <div className="text-left bg-slate-50 p-6 rounded-2xl mb-8 space-y-3 text-slate-600 font-bold text-sm">
-                            <p>✅ 修復貨幣單位轉換邏輯 (元 $\rightarrow$ 角)</p>
-                            <p>✅ 修復選項排版置中與對齊問題</p>
-                            <p>✅ 全面隨機化出題</p>
+                            <p>🌟 重寫容量代入法邏輯引導</p>
+                            <p>🌟 倒水量杯題新增先讀圖、後計算</p>
+                            <p>🎲 極致隨機化，防背誦能力提升</p>
                         </div>
                         <button onClick={startQuiz} className="w-full bg-indigo-600 text-white text-xl font-black py-5 rounded-2xl shadow-xl hover:bg-indigo-700 active:scale-95 transition-all">開始特訓</button>
                     </div>
@@ -694,10 +699,10 @@
                         {devMode && (
                             <div className="mt-4 bg-white p-4 rounded-xl shadow border border-slate-200 max-w-lg mx-auto flex flex-wrap gap-2 justify-center animate-in zoom-in-95">
                                 <div className="w-full text-xs font-bold text-slate-500 mb-2">點擊即可直接測試該題型：</div>
-                                <button onClick={() => jumpToQuestion(6)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">貨幣單位修正 (Q6)</button>
-                                <button onClick={() => jumpToQuestion(22)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">選項排版測試 (Q22)</button>
-                                <button onClick={() => jumpToQuestion(10)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">乘法對齊測試 (Q10)</button>
-                                <button onClick={() => jumpToQuestion(20)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">三個量杯比較 (Q20)</button>
+                                <button onClick={() => jumpToQuestion(19)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">容量代入法測試 (Q19)</button>
+                                <button onClick={() => jumpToQuestion(18)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">倒水量杯測試 (Q18)</button>
+                                <button onClick={() => jumpToQuestion(6)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">貨幣算術測試 (Q6)</button>
+                                <button onClick={() => jumpToQuestion(22)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">平行四邊形選項測試 (Q22)</button>
                             </div>
                         )}
                     </div>
