@@ -3,19 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Jasper 數學模擬試卷 V10.1 (除法直式整合版)</title>
+    <title>Jasper 數學模擬試卷 V10.2 (流暢輸入版)</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Roboto+Mono:wght@500;700&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0f9ff; user-select: none; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0f9ff; user-select: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         .font-mono { font-family: 'Roboto Mono', monospace; }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         
-        .digit-input { width: 100%; height: 100%; text-align: center; font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 1.5rem; border: 2px solid #cbd5e1; border-radius: 0.5rem; background-color: white; color: #1e293b; transition: all 0.2s; }
-        .digit-input:focus { border-color: #6366f1; outline: none; background-color: #eef2ff; transform: scale(1.05); z-index: 10; }
+        /* 移除任何錯誤時的紅色背景，全靠按鈕檢查 */
+        .digit-input { width: 100%; height: 100%; text-align: center; font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 1.5rem; border: 2px solid #cbd5e1; border-radius: 0.5rem; background-color: white; color: #1e293b; transition: all 0.2s; padding: 0;}
+        .digit-input:focus { border-color: #6366f1; background-color: #eef2ff; transform: scale(1.05); z-index: 10; outline: none;}
         .digit-input:disabled { background-color: #f8fafc; border-color: #e2e8f0; color: #94a3b8; }
         
         .carry-input { width: 100%; height: 30px; text-align: center; font-size: 0.9rem; font-weight: bold; color: #ef4444; background-color: transparent; border: 1px dashed #fda4af; border-radius: 4px; z-index: 5; margin-bottom: 2px; }
@@ -149,16 +150,19 @@
             );
         };
 
-        // --- 直式組件 (加減乘除) ---
+        // --- 動態對齊直式加減 ---
         const VerticalAddSub = ({ n1, n2, op, onComplete }) => {
-            const digits1 = n1.toString().padStart(4, ' ').split('');
-            const digits2 = n2.toString().padStart(4, ' ').split('');
-            const [inputs, setInputs] = useState(['', '', '', '']);
-            const [carries, setCarries] = useState(['', '', '', '']);
+            const correctAns = op === '+' ? n1 + n2 : n1 - n2;
+            const n1Arr = n1.toString().split('');
+            const n2Arr = n2.toString().split('');
+            const ansArr = correctAns.toString().split('');
+            const maxLen = Math.max(n1Arr.length, n2Arr.length, ansArr.length, 4); 
+            const gridCols = maxLen + 1; // +1 for the operator column
+
+            const [inputs, setInputs] = useState(Array(ansArr.length).fill(''));
+            const [carries, setCarries] = useState(Array(maxLen).fill(''));
             const [userOp, setUserOp] = useState('?');
             const [errorMsg, setErrorMsg] = useState('');
-            const correctAns = op === '+' ? n1 + n2 : n1 - n2;
-            const correctDigits = correctAns.toString().padStart(4, ' ').split('');
 
             const checkAnswer = () => {
                 if (userOp !== op) { setErrorMsg(`請選擇正確的計算符號！(應該是 ${op} 喔)`); return; }
@@ -168,16 +172,29 @@
             };
 
             return (
-                <div className="bg-white p-6 rounded-2xl border-2 border-slate-200 shadow-sm max-w-sm mx-auto animate-in zoom-in-95">
-                    <div className="grid grid-cols-5 gap-1 font-mono">
-                        <div className="col-span-1"></div>{digits1.map((d, i) => <div key={`d1-${i}`} className="h-10 flex items-center justify-center text-3xl font-black text-slate-700">{d}</div>)}
-                        <select value={userOp} onChange={e=>{setUserOp(e.target.value); setErrorMsg('');}} className="op-select col-span-1 text-3xl font-black text-blue-600 bg-blue-50 border-2 border-blue-200 rounded-lg outline-none">
+                <div className="bg-white p-6 rounded-2xl border-2 border-slate-200 shadow-sm max-w-sm mx-auto animate-in zoom-in-95 overflow-x-auto">
+                    <div className="grid gap-2 font-mono items-center justify-end" style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(40px, 1fr))` }}>
+                        {/* Carries */}
+                        <div style={{gridColumn: `span 1`}}></div>
+                        {carries.map((v, i) => <input key={`c-${i}`} className="carry-input" placeholder="." value={v} onChange={e=>{const n=[...carries];n[i]=e.target.value.slice(-2);setCarries(n);}} />)}
+                        
+                        {/* Number 1 */}
+                        <div style={{gridColumn: `span ${gridCols - n1Arr.length}`}}></div>
+                        {n1Arr.map((d, i) => <div key={`d1-${i}`} className="h-10 flex items-center justify-center text-3xl font-black text-slate-700">{d}</div>)}
+                        
+                        {/* Operator & Number 2 */}
+                        <select value={userOp} onChange={e=>{setUserOp(e.target.value); setErrorMsg('');}} className="op-select h-10 text-3xl font-black text-blue-600 bg-blue-50 border-2 border-blue-200 rounded-lg outline-none">
                             <option value="?">?</option><option value="+">+</option><option value="-">-</option><option value="×">×</option>
                         </select>
-                        {digits2.map((d, i) => <div key={`d2-${i}`} className="h-10 flex items-center justify-center text-3xl font-black text-slate-700">{d}</div>)}
-                        <div className="col-span-1"></div>{carries.map((v, i) => (<div key={`c-${i}`} className="flex items-end justify-center"><input className="carry-input" value={v} placeholder="." onChange={e=>setCarries(p=>{const n=[...p];n[i]=e.target.value.slice(-2);return n;})} /></div>))}
-                        <div className="col-span-5 calc-line"></div>
-                        <div className="col-span-1"></div>{inputs.map((v, i) => (<input key={`in-${i}`} type="number" className="digit-input h-14" value={v} disabled={correctDigits[i]===' '} onChange={e => {setInputs(p=>{const n=[...p];n[i]=e.target.value.slice(-1);return n;}); setErrorMsg('');}} />))}
+                        <div style={{gridColumn: `span ${gridCols - 1 - n2Arr.length}`}}></div>
+                        {n2Arr.map((d, i) => <div key={`d2-${i}`} className="h-10 flex items-center justify-center text-3xl font-black text-slate-700">{d}</div>)}
+                        
+                        {/* Line */}
+                        <div className="calc-line" style={{gridColumn: `span ${gridCols}`}}></div>
+                        
+                        {/* Inputs */}
+                        <div style={{gridColumn: `span ${gridCols - ansArr.length}`}}></div>
+                        {inputs.map((v, i) => <input key={`in-${i}`} type="number" className="digit-input h-14" value={v} onChange={e => {const n=[...inputs];n[i]=e.target.value.slice(-1);setInputs(n);setErrorMsg('');}} />)}
                     </div>
                     {errorMsg && <div className="mt-3 text-center text-rose-500 font-bold text-sm bg-rose-50 p-2 rounded">{errorMsg}</div>}
                     <button onClick={checkAnswer} className="mt-5 w-full bg-indigo-600 text-white py-3 rounded-xl font-black shadow-md active:scale-95 transition-all hover:bg-indigo-700">檢查答案</button>
@@ -185,18 +202,26 @@
             );
         };
 
+        // --- 動態對齊連加連減 ---
         const VerticalContinuous = ({ n1, n2, n3, op1, op2, onComplete }) => {
-            const digits1 = n1.toString().padStart(4, ' ').split('');
-            const digits2 = n2.toString().padStart(4, ' ').split('');
-            const digits3 = n3.toString().padStart(4, ' ').split('');
             const step1Ans = op1 === '+' ? n1 + n2 : n1 - n2;
-            const digitsStep1 = step1Ans.toString().padStart(4, ' ').split('');
             const finalAns = op2 === '+' ? step1Ans + n3 : step1Ans - n3;
-            const digitsFinal = finalAns.toString().padStart(4, ' ').split('');
+            
+            const n1Arr = n1.toString().split('');
+            const n2Arr = n2.toString().split('');
+            const n3Arr = n3.toString().split('');
+            const step1Arr = step1Ans.toString().split('');
+            const finalArr = finalAns.toString().split('');
+            
+            const maxLen = Math.max(n1Arr.length, n2Arr.length, n3Arr.length, step1Arr.length, finalArr.length, 4);
+            const gridCols = maxLen + 1;
 
-            const [inputs1, setInputs1] = useState(['', '', '', '']); const [carries1, setCarries1] = useState(['', '', '', '']);
-            const [inputs2, setInputs2] = useState(['', '', '', '']); const [carries2, setCarries2] = useState(['', '', '', '']);
-            const [userOp1, setUserOp1] = useState('?'); const [userOp2, setUserOp2] = useState('?');
+            const [inputs1, setInputs1] = useState(Array(step1Arr.length).fill('')); 
+            const [carries1, setCarries1] = useState(Array(maxLen).fill(''));
+            const [inputs2, setInputs2] = useState(Array(finalArr.length).fill('')); 
+            const [carries2, setCarries2] = useState(Array(maxLen).fill(''));
+            const [userOp1, setUserOp1] = useState('?'); 
+            const [userOp2, setUserOp2] = useState('?');
             const [errorMsg, setErrorMsg] = useState('');
 
             const checkAnswer = () => {
@@ -210,23 +235,39 @@
             };
 
             return (
-                <div className="bg-white p-6 rounded-2xl border-2 border-slate-200 shadow-sm max-w-sm mx-auto animate-in zoom-in-95">
-                    <div className="grid grid-cols-5 gap-1 font-mono items-center">
-                        <div className="col-span-1"></div>{digits1.map((d, i) => <div key={`d1-${i}`} className="h-8 flex items-center justify-center text-2xl font-black text-slate-700">{d}</div>)}
-                        <select value={userOp1} onChange={e=>{setUserOp1(e.target.value); setErrorMsg('');}} className="op-select col-span-1 text-2xl font-black text-blue-600 bg-blue-50 border-2 border-blue-200 rounded-lg outline-none">
+                <div className="bg-white p-6 rounded-2xl border-2 border-slate-200 shadow-sm max-w-sm mx-auto animate-in zoom-in-95 overflow-x-auto">
+                    <div className="grid gap-1 font-mono items-center justify-end" style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(36px, 1fr))` }}>
+                        
+                        <div style={{gridColumn: `span ${gridCols - n1Arr.length}`}}></div>
+                        {n1Arr.map((d, i) => <div key={`d1-${i}`} className="h-8 flex items-center justify-center text-2xl font-black text-slate-700">{d}</div>)}
+                        
+                        <select value={userOp1} onChange={e=>{setUserOp1(e.target.value); setErrorMsg('');}} className="op-select h-8 text-2xl font-black text-blue-600 bg-blue-50 border-2 border-blue-200 rounded-lg outline-none">
                             <option value="?">?</option><option value="+">+</option><option value="-">-</option>
                         </select>
-                        {digits2.map((d, i) => <div key={`d2-${i}`} className="h-8 flex items-center justify-center text-2xl font-black text-slate-700">{d}</div>)}
-                        <div className="col-span-1"></div>{carries1.map((v, i) => <div key={`c1-${i}`} className="flex items-end justify-center"><input className="carry-input" value={v} placeholder="." onChange={e=>setCarries1(p=>{const n=[...p];n[i]=e.target.value.slice(-2);return n;})} /></div>)}
-                        <div className="col-span-5 calc-line"></div>
-                        <div className="col-span-1"></div>{inputs1.map((v, i) => <input key={`in1-${i}`} type="number" className="digit-input h-10" value={v} disabled={digitsStep1[i]===' '} onChange={e => {setInputs1(p=>{const n=[...p];n[i]=e.target.value.slice(-1);return n;}); setErrorMsg('');}} />)}
-                        <select value={userOp2} onChange={e=>{setUserOp2(e.target.value); setErrorMsg('');}} className="op-select col-span-1 text-2xl font-black text-blue-600 bg-blue-50 border-2 border-blue-200 rounded-lg mt-2 outline-none">
+                        <div style={{gridColumn: `span ${gridCols - 1 - n2Arr.length}`}}></div>
+                        {n2Arr.map((d, i) => <div key={`d2-${i}`} className="h-8 flex items-center justify-center text-2xl font-black text-slate-700">{d}</div>)}
+                        
+                        <div style={{gridColumn: `span 1`}}></div>
+                        {carries1.map((v, i) => <div key={`c1-${i}`} className="flex items-end justify-center"><input className="carry-input h-6 text-sm" value={v} placeholder="." onChange={e=>{const n=[...carries1];n[i]=e.target.value.slice(-2);setCarries1(n);}} /></div>)}
+                        
+                        <div className="calc-line" style={{gridColumn: `span ${gridCols}`}}></div>
+                        
+                        <div style={{gridColumn: `span ${gridCols - step1Arr.length}`}}></div>
+                        {inputs1.map((v, i) => <input key={`in1-${i}`} type="number" className="digit-input h-10" value={v} onChange={e => {const n=[...inputs1];n[i]=e.target.value.slice(-1);setInputs1(n);setErrorMsg('');}} />)}
+                        
+                        <select value={userOp2} onChange={e=>{setUserOp2(e.target.value); setErrorMsg('');}} className="op-select h-8 text-2xl font-black text-blue-600 bg-blue-50 border-2 border-blue-200 rounded-lg mt-2 outline-none">
                             <option value="?">?</option><option value="+">+</option><option value="-">-</option>
                         </select>
-                        {digits3.map((d, i) => <div key={`d3-${i}`} className="h-8 flex items-center justify-center text-2xl font-black text-slate-700 mt-2">{d}</div>)}
-                        <div className="col-span-1"></div>{carries2.map((v, i) => <div key={`c2-${i}`} className="flex items-end justify-center mt-1"><input className="carry-input" value={v} placeholder="." onChange={e=>setCarries2(p=>{const n=[...p];n[i]=e.target.value.slice(-2);return n;})} /></div>)}
-                        <div className="col-span-5 calc-line"></div>
-                        <div className="col-span-1"></div>{inputs2.map((v, i) => <input key={`in2-${i}`} type="number" className="digit-input h-10" value={v} disabled={digitsFinal[i]===' '} onChange={e => {setInputs2(p=>{const n=[...p];n[i]=e.target.value.slice(-1);return n;}); setErrorMsg('');}} />)}
+                        <div style={{gridColumn: `span ${gridCols - 1 - n3Arr.length}`}}></div>
+                        {n3Arr.map((d, i) => <div key={`d3-${i}`} className="h-8 flex items-center justify-center text-2xl font-black text-slate-700 mt-2">{d}</div>)}
+                        
+                        <div style={{gridColumn: `span 1`}}></div>
+                        {carries2.map((v, i) => <div key={`c2-${i}`} className="flex items-end justify-center mt-1"><input className="carry-input h-6 text-sm" value={v} placeholder="." onChange={e=>{const n=[...carries2];n[i]=e.target.value.slice(-2);setCarries2(n);}} /></div>)}
+                        
+                        <div className="calc-line" style={{gridColumn: `span ${gridCols}`}}></div>
+                        
+                        <div style={{gridColumn: `span ${gridCols - finalArr.length}`}}></div>
+                        {inputs2.map((v, i) => <input key={`in2-${i}`} type="number" className="digit-input h-10" value={v} onChange={e => {const n=[...inputs2];n[i]=e.target.value.slice(-1);setInputs2(n);setErrorMsg('');}} />)}
                     </div>
                     {errorMsg && <div className="mt-3 text-center text-rose-500 font-bold text-sm bg-rose-50 p-2 rounded">{errorMsg}</div>}
                     <button onClick={checkAnswer} className="mt-5 w-full bg-indigo-600 text-white py-3 rounded-xl font-black shadow-md active:scale-95 transition-all hover:bg-indigo-700">檢查全式</button>
@@ -244,7 +285,6 @@
             const [userOp, setUserOp] = useState('?');
             const [errorMsg, setErrorMsg] = useState('');
             const correctAns = n1 * n2;
-            const correctDigits = correctAns.toString().split('');
 
             const checkAnswer = () => {
                 if (userOp !== '×') { setErrorMsg('請選擇正確的計算符號！(應該是乘法喔)'); return; }
@@ -257,7 +297,7 @@
                 <div className="bg-white p-6 rounded-2xl border-2 border-slate-200 shadow-sm max-w-md mx-auto animate-in zoom-in-95 overflow-x-auto">
                     <div className="grid gap-2 font-mono items-center justify-end" style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(40px, 1fr))` }}>
                         <div style={{gridColumn: `span ${gridCols - digits1.length}`}}></div>
-                        {carries.map((v, i) => <input key={`c-${i}`} className="carry-input" placeholder="進" value={v} onChange={e=>setCarries(p=>{const n=[...p];n[i]=e.target.value.slice(-1);return n;})} />)}
+                        {carries.map((v, i) => <input key={`c-${i}`} className="carry-input" placeholder="進" value={v} onChange={e=>{const n=[...carries];n[i]=e.target.value.slice(-1);setCarries(n);}} />)}
                         
                         <div style={{gridColumn: `span ${gridCols - digits1.length}`}}></div>
                         {digits1.map((d, i) => <div key={`d1-${i}`} className="h-10 flex items-center justify-center text-3xl font-black text-slate-700">{d}</div>)}
@@ -271,7 +311,7 @@
                         <div className="calc-line" style={{gridColumn: `span ${gridCols}`}}></div>
                         
                         <div style={{gridColumn: `span ${gridCols - ansLength}`}}></div>
-                        {inputs.map((v, i) => <input key={`in-${i}`} type="number" className="digit-input h-14" value={v} disabled={correctDigits[i]===' '} placeholder={correctDigits[i]===' '?'':'?'} onChange={e => {setInputs(p=>{const n=[...p];n[i]=e.target.value.slice(-1);return n;}); setErrorMsg('');}} />)}
+                        {inputs.map((v, i) => <input key={`in-${i}`} type="number" className="digit-input h-14" value={v} placeholder="?" onChange={e => {const n=[...inputs];n[i]=e.target.value.slice(-1);setInputs(n); setErrorMsg('');}} />)}
                     </div>
                     {errorMsg && <div className="mt-3 text-center text-rose-500 font-bold text-sm bg-rose-50 p-2 rounded">{errorMsg}</div>}
                     <button onClick={checkAnswer} className="mt-5 w-full bg-indigo-600 text-white py-3 rounded-xl font-black shadow-md active:scale-95 transition-all hover:bg-indigo-700">檢查答案</button>
@@ -279,7 +319,7 @@
             );
         };
 
-        // --- 全新加入：直式除法填空組件 ---
+        // --- 直式除法 (修復輸入卡頓問題：使用 Inline 渲染而非嵌套組件) ---
         const VerticalDivision = ({ digits, blanks, onComplete }) => {
             const [inputs, setInputs] = useState({});
             const [errorMsg, setErrorMsg] = useState('');
@@ -304,10 +344,23 @@
                 else setErrorMsg('答案有錯喔！請重新檢查你的計算。');
             };
 
-            const Slot = ({ id }) => {
+            // Inline Render 函數，防止 React 重繪丟失焦點
+            const renderSlot = (id) => {
                 const isBlank = blanks.includes(id);
                 if (!isBlank) return <div className="w-11 h-12 flex items-center justify-center text-2xl font-black text-slate-700">{getCorrectVal(id)}</div>;
-                return <input type="number" className="digit-input w-11 h-12 text-2xl mx-[2px] bg-indigo-50 border-indigo-200 placeholder-indigo-200" placeholder="?" value={inputs[id] || ''} onChange={e => { setInputs(p => ({...p, [id]: e.target.value.slice(-1)})); setErrorMsg(''); }} />;
+                return (
+                    <input 
+                        type="tel" 
+                        className="digit-input w-11 h-12 text-2xl mx-[2px] bg-indigo-50 border-indigo-200 placeholder-indigo-200" 
+                        placeholder="?" 
+                        value={inputs[id] || ''} 
+                        onChange={e => { 
+                            const val = e.target.value.slice(-1).replace(/[^0-9]/g, '');
+                            setInputs(p => ({...p, [id]: val})); 
+                            setErrorMsg(''); 
+                        }} 
+                    />
+                );
             };
 
             return (
@@ -315,40 +368,34 @@
                     <div className="flex justify-center font-mono">
                         <div className="flex items-start pt-12 pr-2 text-3xl font-black text-slate-700">{digits.divisor}</div>
                         <div className="flex flex-col items-end">
-                            {/* Quotient */}
                             <div className="flex gap-1 mb-1 pr-1">
                                 {isThreeDigit && <div className="w-11"></div>}
-                                <Slot id="q_t" /><Slot id="q_o" />
+                                {renderSlot('q_t')}{renderSlot('q_o')}
                             </div>
-                            {/* Dividend */}
                             <div className="flex gap-1 border-t-4 border-l-4 border-slate-700 rounded-tl-lg pl-2 py-1 pr-1">
-                                {isThreeDigit && <Slot id="div_h" />}
-                                <Slot id="div_t" /><Slot id="div_o" />
+                                {isThreeDigit && renderSlot('div_h')}
+                                {renderSlot('div_t')}{renderSlot('div_o')}
                             </div>
-                            {/* P1 */}
-                            <div className="flex gap-1 pr-[48px]"> {/* Push left by 1 digit (44px + 4px gap) */}
+                            <div className="flex gap-1 pr-[48px]">
                                 {isThreeDigit ? (
-                                    <> {digits.p1 >= 10 ? <Slot id="p1_h" /> : <div className="w-11"></div>} <Slot id="p1_t" /> </>
+                                    <> {digits.p1 >= 10 ? renderSlot('p1_h') : <div className="w-11"></div>} {renderSlot('p1_t')} </>
                                 ) : (
-                                    <> <Slot id="p1" /> </>
+                                    <> {renderSlot('p1')} </>
                                 )}
                             </div>
                             <div className="h-1 bg-slate-700 w-full mt-1 mb-2"></div>
-                            {/* Rem1 + BD */}
                             <div className="flex gap-1 pr-1">
                                 {isThreeDigit && <div className="w-11"></div>}
-                                <Slot id="rem1" /><Slot id="bd" />
+                                {renderSlot('rem1')}{renderSlot('bd')}
                             </div>
-                            {/* P2 */}
                             <div className="flex gap-1 pr-1">
                                 {isThreeDigit && <div className="w-11"></div>}
-                                {digits.p2 >= 10 ? <Slot id="p2_t" /> : <div className="w-11"></div>}
-                                <Slot id="p2_o" />
+                                {digits.p2 >= 10 ? renderSlot('p2_t') : <div className="w-11"></div>}
+                                {renderSlot('p2_o')}
                             </div>
                             <div className="h-1 bg-slate-700 w-[96px] mt-1 mb-2 mr-1"></div>
-                            {/* Rem2 */}
                             <div className="flex gap-1 pr-1 w-[96px] justify-end">
-                                <Slot id="rem2" />
+                                {renderSlot('rem2')}
                             </div>
                         </div>
                     </div>
@@ -386,20 +433,18 @@
             );
         };
 
-        // --- 核心題庫生成器 ---
+        // --- 題庫生成器 ---
         const generateQuizData = () => {
             const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
             const shuffle = (arr) => arr.sort(() => Math.random() - 0.5);
 
             const allQs = [
-                // Q1: 數字讀法
                 (() => { 
-                    const numMap = [{n: 54047, c: '五萬四千零四十七'}, {n: 30205, c: '三萬零二百零五'}, {n: 80016, c: '八萬零一十六'}, {n: 12003, c: '一萬二千零三'}, {n: 40500, c: '四萬零五百'}];
+                    const numMap = [{n: 54047, c: '五萬四千零四十七'}, {n: 30205, c: '三萬零二百零五'}, {n: 80016, c: '八萬零一十六'}, {n: 12003, c: '一萬二千零三'}, {n: 40500, c: '四萬零五百'}, {n: 60302, c: '六萬零三百零二'}, {n: 90001, c: '九萬零一'}, {n: 24050, c: '二萬四千零五十'}];
                     const pair = numMap[rand(0, numMap.length - 1)];
                     return { id: 1, title: '數字讀法', text: `「${pair.n}」讀作什麼？`, steps: [{ type: 'TEXT_INPUT', label: '請用中文字寫出讀法', correct: pair.c, hint: '注意「零」的寫法，不要打錯字喔！' }] }; 
                 })(),
                 
-                // Q2: 數字排列
                 (() => {
                     const base = rand(2, 9); const n1 = base * 10000 + 3003; const n2 = base * 10000 + 303; const n3 = base * 10000 + 33;
                     const sorted = [n3, n2, n1];
@@ -410,7 +455,6 @@
                     ]};
                 })(),
                 
-                // Q3: 算柱奇數
                 (() => {
                     const beadsMap = [{b: 3, a: '10011'}, {b: 4, a: '10003'}, {b: 5, a: '10013'}, {b: 6, a: '10005'}];
                     const choice = beadsMap[rand(0, beadsMap.length-1)];
@@ -421,11 +465,9 @@
                     ]};
                 })(),
                 
-                // Q4-Q5: 隨機四位數運算
                 (() => { const a=rand(6000,9000), b=rand(1000,5000); return { id: 4, title: '四位數減法', text: `${a} - ${b} = ?`, steps: [{ type: 'LOGIC', text: '這是一條純減法。', options: shuffle(['開始計算', '心算', '直接寫答案', '放棄']), ans: '開始計算' }, { type: 'SUB', n1: a, n2: b, hint: '小心借位' }]}; })(),
                 (() => { const a=rand(1000,4000), b=rand(2000,5000); return { id: 5, title: '四位數加法', text: `${a} + ${b} = ?`, steps: [{ type: 'LOGIC', text: '這是一條純加法。', options: shuffle(['開始計算', '心算', '直接寫答案', '放棄']), ans: '開始計算' }, { type: 'ADD', n1: a, n2: b, hint: '要小心連續進位' }]}; })(),
                 
-                // Q6: 貨幣與括號
                 (() => { 
                     const dA=rand(30,60), dB=rand(2,8), cB=rand(1,9), dC=rand(10,20), cC=rand(1,9); 
                     const v1 = dB*10 + cB; const v2 = dC*10 + cC; 
@@ -440,7 +482,6 @@
                     ]}; 
                 })(),
 
-                // Q7: 連乘巧算
                 (() => { 
                     const pairs = [{a:20, c:5, m:100}, {a:25, c:4, m:100}, {a:50, c:2, m:100}];
                     const p = pairs[rand(0,2)]; const b=rand(3,9); 
@@ -451,7 +492,6 @@
                     ]}; 
                 })(),
 
-                // Q8: 逆向代數
                 (() => { 
                     const a=rand(3000, 4999), b=rand(2000, 3999), target=rand(1000, 2999); 
                     return { id: 8, title: '逆向思維', text: `${a} + ${b} - 😊 = ${target}。😊 是多少？`, steps: [
@@ -462,13 +502,11 @@
                     ]}; 
                 })(),
 
-                // Q9: 連加
                 (() => { const a=rand(1000,1200), b=rand(2000,3200), c=rand(1400,1600); return { id: 9, title: '三數連加', text: `圖書館第一層有 ${a} 本，第二層 ${b} 本，第三層 ${c} 本。共有多少本？`, steps: [
                     { type: 'LOGIC', text: '求總數，將三層的書本相加。', options: shuffle(['開始連加計算', '分開算', '乘法計算', '減法計算']), ans: '開始連加計算' }, 
                     { type: 'CONTINUOUS', n1: a, n2: b, n3: c, op1: '+', op2: '+', hint: '請用連加直式計算' }
                 ]}; })(),
 
-                // Q10: 找贖問題
                 (() => { const price=rand(1000,2400), qty=rand(2,4), pay=qty*price > 5000 ? 10000 : 5000; return { id: 10, title: '找贖問題', text: `陳先生買了 ${qty} 部機器，每部 $${price}。他付 $${pay}，應找回多少元？`, steps: [
                     { type: 'LOGIC', text: `Step 1: 先算 ${qty} 部機器的總價`, options: shuffle([`${price} × ${qty}`, `${pay} - ${price}`, `${price} + ${qty}`, `${pay} × ${qty}`]), ans: `${price} × ${qty}` }, 
                     { type: 'MULTI', n1: price, n2: qty, hint: '直式計算總價' }, 
@@ -476,18 +514,17 @@
                     { type: 'SUB', n1: pay, n2: price*qty, hint: '直式計算找贖 (小心借位)' }
                 ]}; })(),
 
-                // Q11-Q12: 減法與括號
                 (() => { const a=rand(1300,1900), b=rand(400,600), c=rand(40,90); return { id: 11, title: '連減法', text: `${a} - ${b} - ${c} = ?`, steps: [
                     { type: 'LOGIC', text: '純連減法。', options: shuffle(['開始連減計算', '分開算', '加法計算', '跳過']), ans: '開始連減計算' }, 
                     { type: 'CONTINUOUS', n1: a, n2: b, n3: c, op1: '-', op2: '-', hint: '請用連減直式計算' }
                 ]}; })(),
+
                 (() => { const a=rand(600,900), b=rand(200,300), c=rand(80,150); return { id: 12, title: '括號減法', text: `${a} - (${b} + ${c}) = ?`, steps: [
                     { type: 'LOGIC', text: '有括弧，第一步先算？', options: shuffle([`${b} + ${c}`, `${a} - ${b}`, `${a} + ${c}`, `${a} - ${c}`]), ans: `${b} + ${c}` }, 
                     { type: 'ADD', n1: b, n2: c, hint: '直式計算括弧內' }, 
                     { type: 'SUB', n1: a, n2: b+c, hint: '最後計算減法' }
                 ]}; })(),
 
-                // Q13: 連續除法
                 (() => { 
                     const divSets = [{a: 200, b: 8, c: 5}, {a: 400, b: 8, c: 5}, {a: 600, b: 8, c: 5}, {a: 300, b: 6, c: 5}, {a: 600, b: 6, c: 5}, {a: 240, b: 6, c: 8}, {a: 120, b: 4, c: 6}, {a: 360, b: 9, c: 4}, {a: 180, b: 6, c: 5}, {a: 240, b: 8, c: 6}];
                     const s = divSets[rand(0, divSets.length-1)];
@@ -497,7 +534,6 @@
                     { type: 'INPUT_CHECK', label: `再除以 ${s.c}，答案是？`, correct: ((s.a/s.b)/s.c).toString(), hint: '心算' }
                 ]}; })(),
 
-                // Q14: 除法估算
                 (() => { const q=rand(20,60), d=rand(4,9); const maxRem = d-1; const maxA = q*d + maxRem; const hDigit = Math.floor(maxA/100); return { id: 14, title: '除法與餘數', text: `「 ✡️ ÷ ${d} = ${q} ... 😊 」。✡️ 是一個三位數，它的百位數字最大可能是多少？`, steps: [
                     { type: 'LOGIC', text: 'Step 1: 被除數 = 商 × 除數 + 餘數。先算 商 × 除數', options: shuffle([`${q} × ${d}`, `${q} + ${d}`, `${q} - ${d}`, `${q} ÷ ${d}`]), ans: `${q} × ${d}` }, 
                     { type: 'MULTI', n1: q, n2: d, hint: '直式計算' }, 
@@ -506,7 +542,6 @@
                     { type: 'INPUT_CHECK', label: `這個數的百位數字是？`, correct: hDigit.toString(), hint: '看最左邊的數字' }
                 ]}; })(),
 
-                // Q15: 有餘數除法
                 (() => { 
                     const b=rand(3,9), q=rand(100, 250), rem=rand(1, b-1); const a = b * q + rem;
                     return { id: 15, title: '除法計算', text: `${a} ÷ ${b} = ?`, steps: [
@@ -514,15 +549,11 @@
                     { type: 'INPUT_CHECK', label: '組合起來，答案是？(輸入格式如 204...1)', correct: `${q}...${rem}`, hint: '中間用三個點點連接' }
                 ]}; })(),
 
-                // Q16: 單位換算與除法
-                (() => { 
-                    const len = rand(2,8); const parts = [4, 5][rand(0,1)]; const cm = len * 100;
-                    return { id: 16, title: '單位換算與除法', text: `小明把長 ${len} 米的絲帶，平均分成 ${parts} 段，每段長幾多厘米？`, steps: [
-                    { type: 'LOGIC', text: `題目問「厘米」，但長度是「米」。先換算：${len} 米 = ? 厘米`, options: shuffle([`${cm} 厘米`, `${len*10} 厘米`, `${cm*10} 厘米`, `${len} 厘米`]), ans: `${cm} 厘米` }, 
-                    { type: 'INPUT_CHECK', label: `平均分成 ${parts} 段，即 ${cm} ÷ ${parts} = ?`, correct: (cm/parts).toString(), hint: '心算除法' }
-                ]}; })(),
+                { id: 16, title: '單位換算與除法', text: '小明把長 2 米的絲帶，平均分成 4 段，每段長幾多厘米？', steps: [
+                    { type: 'LOGIC', text: '題目問「厘米」，但長度是「米」。先換算：2 米 = ? 厘米', options: shuffle(['200 厘米', '20 厘米', '2000 厘米', '2 厘米']), ans: '200 厘米' }, 
+                    { type: 'INPUT_CHECK', label: '平均分成 4 段，即 200 ÷ 4 = ?', correct: '50', hint: '心算 20 ÷ 4 再加 0' }
+                ]},
 
-                // Q17: 隨機日期計算
                 (() => { 
                     const dates = [ { d1: '十五日', d2: '十七日', days: 3 }, { d1: '十日', d2: '十四日', days: 5 }, { d1: '二十日', d2: '二十三日', days: 4 }, { d1: '八日', d2: '十日', days: 3 } ];
                     const dSet = dates[rand(0, dates.length-1)]; const pay=rand(800,980);
@@ -531,7 +562,6 @@
                     { type: 'MULTI', n1: pay, n2: dSet.days, hint: '直式計算總工資' }
                 ]}; })(),
 
-                // Q18: 先讀後計算量杯容量 (全新防直式干擾法)
                 (() => { 
                     const cap1=[1000, 2000][rand(0,1)], cap2=[1000, 2000][rand(0,1)];
                     const v1 = cap1 * [0.25, 0.5, 0.75][rand(0,2)]; 
@@ -544,7 +574,6 @@
                     ]}; 
                 })(),
 
-                // Q19: 容量代入邏輯 (重寫語法)
                 (() => { 
                     const multiplier = rand(2, 4);
                     return { id: 19, title: '代數邏輯推導', text: '觀察圖中容器的容量等式關係。', isCapacitySub: true, subLogic: multiplier, steps: [
@@ -552,7 +581,6 @@
                     {type:'LOGIC', text: `觀察上方等式：1 個大煲 = ${multiplier} 個水樽 + ${multiplier} 隻杯。\n結合剛才的發現，1 個大煲可以完美換成幾多個水壺？`, options: shuffle([`${multiplier} 個水壺`, '1 個水壺', `${multiplier+1} 個水壺`, `${multiplier-1} 個水壺`]), ans: `${multiplier} 個水壺`}
                 ]}; })(),
 
-                // Q20: 量杯比較
                 (() => {
                     const variations = [
                         {l: [{c:500, l:500, n:'A'}, {c:2000, l:200, n:'B'}, {c:1000, l:500, n:'C'}], q: '量杯 C (1L) 半滿，即是多少水？', a1: '500 mL', a2: '量杯 A 和 C 的水一樣多'},
@@ -566,7 +594,6 @@
                     ]};
                 })(),
                 
-                // Q21-Q22: 隨機幾何
                 (() => {
                     const props = [
                         {q: '所有平行四邊形都有甚麼必定成立的特性？', a: '對邊長度相等', o: ['四邊長度都相等', '都是正方形', '有 3 個直角']},
@@ -583,7 +610,7 @@
 
                 (() => {
                     const types = [
-                        { type: '2x2', name: '「田」字', max: 9, q1: '4', q2: '4', path: '<path d="M 40 100 L 80 20 L 160 20 L 120 100 Z" fill="#e0e7ff" stroke="#334155" strokeWidth="3"/><path d="M 60 60 L 140 60" stroke="#334155" strokeWidth="3"/><path d="M 100 20 L 80 100" stroke="#334155" strokeWidth="3"/>' },
+                        { type: '2x2', name: '「田」字', max: 9, q1: '4', q2: '4', path: '<path d="M 40 100 L 80 20 L 160 20 L 120 100 Z" fill="#e0e7ff" stroke="#334155" strokeWidth="3"/><path d="M 60 60 L 140 60" stroke="#334155" strokeWidth="3"/><path d="M 120 20 L 80 100" stroke="#334155" strokeWidth="3"/>' },
                         { type: '3x1', name: '由三個小格打橫拼成的', max: 6, q1: '3', q2: '2', path: '<path d="M 40 80 L 70 20 L 190 20 L 160 80 Z" fill="#e0e7ff" stroke="#334155" strokeWidth="3"/><path d="M 110 20 L 80 80" stroke="#334155" strokeWidth="3"/><path d="M 150 20 L 120 80" stroke="#334155" strokeWidth="3"/>' },
                         { type: '2x1', name: '由兩個小格打橫拼成的', max: 3, q1: '2', q2: '1', path: '<path d="M 60 80 L 90 20 L 170 20 L 140 80 Z" fill="#e0e7ff" stroke="#334155" strokeWidth="3"/><path d="M 130 20 L 100 80" stroke="#334155" strokeWidth="3"/>' }
                     ];
@@ -595,7 +622,6 @@
                     ]};
                 })(),
 
-                // Q23: 象形圖
                 (() => {
                     let comp = rand(2, 4), multiplier = rand(2, 3), paint = comp * multiplier;
                     let swim = rand(4, 7), dance = rand(3, 6), calli = 1; 
@@ -608,7 +634,6 @@
                     ]};
                 })(),
 
-                // Q24: 三數比較題
                 (() => {
                     const dad=rand(2500,3500), mom=rand(1500,2000), diff=rand(150,450);
                     const cousin = mom + diff; const finalAns = dad - cousin;
@@ -620,13 +645,13 @@
                     ]};
                 })(),
 
-                // 全新加入: Q26 除法直式 (由您的要求整合進來)
+                // Q26 除法直式
                 (() => {
                     let validPuzzle = false;
                     let digits = {}, blanks = [];
                     while(!validPuzzle) {
                         let divisor = rand(2, 9);
-                        let quotient = rand(10, 99); // 確保商為兩位數
+                        let quotient = rand(10, 99);
                         let remainder = rand(0, divisor - 1);
                         let dividend = divisor * quotient + remainder;
 
@@ -638,7 +663,7 @@
 
                         let p1 = divisor * q_t;
                         let firstPart = (dividend >= 100) ? (div_h * 10 + div_t) : div_t;
-                        if (firstPart < p1) continue; // 確保對齊符合標準直式
+                        if (firstPart < p1) continue; 
 
                         let rem1 = firstPart - p1;
                         let bd = div_o;
@@ -652,11 +677,10 @@
                             ['q_t', 'q_o', 'div_h', 'div_t', 'div_o', 'p1_h', 'p1_t', 'rem1', 'bd', 'rem2', 'p2_t', 'p2_o'] :
                             ['q_t', 'q_o', 'div_t', 'div_o', 'p1', 'rem1', 'bd', 'rem2', 'p2_t', 'p2_o'];
 
-                        // 清理不存在的位數
                         if (dividend > 99 && p1 < 10) allKeys = allKeys.filter(k => k !== 'p1_h');
                         if (p2 < 10) allKeys = allKeys.filter(k => k !== 'p2_t');
 
-                        blanks = shuffle(allKeys).slice(0, rand(3, 5)); // 隨機挖空 3~5 格
+                        blanks = shuffle(allKeys).slice(0, rand(3, 5));
                         validPuzzle = true;
                     }
 
@@ -794,7 +818,8 @@
             const renderStep = () => {
                 const stepKey = `${qIndex}-${stepIndex}`; 
                 switch(currentStep.type) {
-                    case 'LOGIC': return <div key={stepKey} className="flex flex-col gap-3 animate-in slide-in-from-right w-full max-w-md mx-auto"><div className="bg-indigo-50 p-4 rounded-xl text-indigo-800 font-bold flex gap-2"><Icon.Brain/> {currentStep.text}</div>{currentStep.options.map((o, i) => <button key={i} onClick={() => handleLogicChoice(o)} className="p-4 border-2 border-slate-200 rounded-xl font-bold hover:bg-indigo-100 hover:border-indigo-400 flex items-center justify-center text-center transition-colors break-words whitespace-pre-wrap">{o}</button>)}</div>;
+                    // 修復選項對齊：加入 w-full text-left px-6 py-4 讓選項按鈕統一格式，就像真正的選擇題
+                    case 'LOGIC': return <div key={stepKey} className="flex flex-col gap-3 animate-in slide-in-from-right w-full max-w-md mx-auto"><div className="bg-indigo-50 p-4 rounded-xl text-indigo-800 font-bold flex gap-2"><Icon.Brain/> {currentStep.text}</div>{currentStep.options.map((o, i) => <button key={i} onClick={() => handleLogicChoice(o)} className="px-6 py-4 border-2 border-slate-200 rounded-xl font-bold hover:bg-indigo-100 hover:border-indigo-400 text-left w-full transition-colors break-words whitespace-pre-wrap">{o}</button>)}</div>;
                     case 'ADD': case 'SUB': return <div key={stepKey} className="animate-in zoom-in-95 w-full flex flex-col items-center">{renderHint(currentStep.hint)}<VerticalAddSub n1={currentStep.n1} n2={currentStep.n2} op={currentStep.type==='ADD'?'+':'-'} onComplete={handleCalcComplete} /></div>;
                     case 'MULTI': return <div key={stepKey} className="animate-in zoom-in-95 w-full flex flex-col items-center">{renderHint(currentStep.hint)}<VerticalMulti n1={currentStep.n1} n2={currentStep.n2} onComplete={handleCalcComplete} /></div>;
                     case 'CONTINUOUS': return <div key={stepKey} className="animate-in zoom-in-95 w-full flex flex-col items-center">{renderHint(currentStep.hint)}<VerticalContinuous n1={currentStep.n1} n2={currentStep.n2} n3={currentStep.n3} op1={currentStep.op1} op2={currentStep.op2} onComplete={handleCalcComplete} /></div>;
@@ -810,13 +835,12 @@
                 <div className="min-h-screen flex flex-col items-center justify-center p-4">
                     <div className="bg-white rounded-[2.5rem] p-8 md:p-12 max-w-lg w-full shadow-2xl text-center border border-slate-100">
                         <div className="inline-block p-4 bg-indigo-100 rounded-full text-indigo-600 mb-6"><Icon.Brain/></div>
-                        <h1 className="text-3xl font-black text-slate-800 mb-2">Jasper 數學 V10.1</h1>
-                        <p className="text-indigo-500 font-bold mb-8 uppercase tracking-widest">除法直式完美整合版</p>
+                        <h1 className="text-3xl font-black text-slate-800 mb-2">Jasper 數學 V10.2</h1>
+                        <p className="text-indigo-500 font-bold mb-8 uppercase tracking-widest">流暢輸入與完美對齊版</p>
                         <div className="text-left bg-slate-50 p-6 rounded-2xl mb-8 space-y-3 text-slate-600 font-bold text-sm">
-                            <p>➗ 成功整合「直式除法挖空題」</p>
-                            <p>🧩 重新設計代數邏輯引導</p>
-                            <p>💦 倒水量杯題強制「先讀數後計算」</p>
-                            <p>🎲 取消直式紅色提示，全題庫動態隨機</p>
+                            <p>✅ 修復除法填空「需按多次」卡頓</p>
+                            <p>✅ 選擇題與幾何圖形選項完美靠左對齊</p>
+                            <p>✅ 全直式採用動態網格，確保不移位</p>
                         </div>
                         <button onClick={startQuiz} className="w-full bg-indigo-600 text-white text-xl font-black py-5 rounded-2xl shadow-xl hover:bg-indigo-700 active:scale-95 transition-all">開始特訓</button>
                     </div>
@@ -829,10 +853,9 @@
                         {devMode && (
                             <div className="mt-4 bg-white p-4 rounded-xl shadow border border-slate-200 max-w-lg mx-auto flex flex-wrap gap-2 justify-center animate-in zoom-in-95">
                                 <div className="w-full text-xs font-bold text-slate-500 mb-2">點擊即可直接測試該題型：</div>
-                                <button onClick={() => jumpToQuestion(26)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">直式除法測試 (Q26)</button>
-                                <button onClick={() => jumpToQuestion(19)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">容量邏輯搭橋 (Q19)</button>
-                                <button onClick={() => jumpToQuestion(18)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">倒水量杯讀數 (Q18)</button>
-                                <button onClick={() => jumpToQuestion(22)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">隨機平行四邊形 (Q22)</button>
+                                <button onClick={() => jumpToQuestion(26)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">流暢除法測試 (Q26)</button>
+                                <button onClick={() => jumpToQuestion(22)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">選擇題靠左對齊 (Q22)</button>
+                                <button onClick={() => jumpToQuestion(10)} className="px-3 py-1 bg-slate-200 rounded text-xs font-bold hover:bg-slate-300">加減乘動態對齊 (Q10)</button>
                             </div>
                         )}
                     </div>
